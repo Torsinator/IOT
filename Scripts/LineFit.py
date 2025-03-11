@@ -9,12 +9,12 @@ y = df["light sensor"].to_numpy(dtype=np.float32)
 print(x)
 print(y)
 
-params = np.polyfit(np.log(x), y, 1)
+c2, c1, c0 = np.polyfit(x, y, 2)
 
 x2 = np.linspace(min(x), max(x), 100)
-y2 = params[0]*np.log(x2) + params[1]
+y2 = c2*x2**2 + c1*x2 + c0
 
-print(f"y = {params[0]}ln(x) + {params[1]}")
+# print(f"y = {m}x + {b}")
 
 plt.plot(x, y, 'o', x2, y2, 'r')
 plt.xlabel('Voltage')
