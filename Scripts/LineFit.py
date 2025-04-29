@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-df = pd.read_csv('Data\\light_sensor.csv')
+df = pd.read_csv('Data\\lightsens.csv')
 x = df["lux-meter"].to_numpy(dtype=np.float32)
 y = df["light sensor"].to_numpy(dtype=np.float32)
 
