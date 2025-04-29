@@ -28,11 +28,11 @@ void loop()
 {
     // The core of your code will likely live here.
     // printf("Value: %d", analogRead(a1));
-
+    Log.info("Starting");
     // Light Sensor
     Log.info("Value: %ld", analogRead(a0));
 
     // Sound sensor
     // Log.info("Value: %ld", digitalRead(D2));
-    delay(100);
+    delay(1000);
 }
