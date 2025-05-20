@@ -24,10 +24,12 @@ LED led_3(LED_3_RED, LED_3_GREEN);
 
 void setup()
 {
+    pinMode(LED_2_GREEN, OUTPUT);
+    pinMode(LED_2_RED, OUTPUT);
     os_queue_create(&control_queue, sizeof(BluetoothMessage), 10, nullptr);
-    led_1 = LED(LED_1_RED, LED_1_GREEN);
-    led_2 = LED(LED_2_RED, LED_2_GREEN);
-    led_3 = LED(LED_3_RED, LED_3_GREEN);
+    // led_1 = LED(LED_1_RED, LED_1_GREEN);
+    // led_2 = LED(LED_2_RED, LED_2_GREEN);
+    // led_3 = LED(LED_3_RED, LED_3_GREEN);
     Bluetooth::Setup();
 }
 
@@ -54,6 +56,7 @@ void loop()
                 SensorNode2Data sn2_data = data_manager.GetSensorNode2Data();
                 sn2_data.connected = true;
                 data_manager.SetSensorNode2Data(sn2_data);
+                led_2.update_LED(LED_STATE::GREEN_SOLID);
                 Log.info("Done");
             }
             break;
@@ -73,6 +76,7 @@ void loop()
                 SensorNode2Data sn2_data = data_manager.GetSensorNode2Data();
                 sn2_data.connected = false;
                 data_manager.SetSensorNode2Data(sn2_data);
+                led_2.update_LED(LED_STATE::OFF);
             }
             break;
         }
@@ -100,7 +104,16 @@ void loop()
             else if (message.node_id == Node::SN2)
             {
                 SensorNode2Data sn2_data = data_manager.GetSensorNode2Data();
-                sn2_data.call_button_activated = true;
+                if ((bool) *message.data)
+                {
+                    sn2_data.call_button_activated = true;
+                    led_2.update_LED(LED_STATE::RED_FLASHING);
+                }
+                else
+                {
+                    sn2_data.call_button_activated = false;
+                    led_2.update_LED(LED_STATE::GREEN_SOLID);
+                }
                 data_manager.SetSensorNode2Data(sn2_data);
             }
             break;

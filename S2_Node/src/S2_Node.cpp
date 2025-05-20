@@ -75,11 +75,53 @@ bool Connect(BluetoothConnection &connection)
     return false;
 }
 
+// void loop()
+// {
+//     // Will use this thread to communicate with the control node in part 2
+//     Bluetooth::SendTemperature(value);
+//     value++;
+//     Log.info("Sent Temp data %d", value);
+//     delay(10000);
+// }
+
 void loop()
 {
-    // Will use this thread to communicate with the control node in part 2
-    Bluetooth::SendTemperature(value);
-    value++;
-    Log.info("Sent Temp data %d", value);
-    delay(10000);
+    BluetoothMessage message;
+    if (os_queue_take(main_queue, &message, CONCURRENT_WAIT_FOREVER, nullptr) == 0)
+    {
+        Log.info("Got queue item: %d", message.message_type);
+        switch (message.message_type)
+        {
+        case CONNECT:
+        {
+            Log.info("In Connect");
+            break;
+        }
+        case DISCONNECT:
+        {
+            Log.info("In Disconnect");
+            break;
+        }
+        case LIGHT:
+        {
+            Log.info("Got Light Message");
+            break;
+        }
+        case CALL_BTN:
+        {
+            Log.info("Got Call Message");
+            break;
+        }
+        case FAN_DUTY:
+        {
+            Log.info("Got Fan Duty Message");
+            FanDutyCycleMessage* duty_message = (FanDutyCycleMessage*) message.data;
+            Fan::SetDutyCycle(duty_message->duty_cycle);
+            Fan::SetOverrideStatus(duty_message->controlled);
+            break;
+        }
+        default:
+            break;
+        }
+    }
 }

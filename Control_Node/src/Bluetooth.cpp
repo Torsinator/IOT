@@ -10,7 +10,7 @@ namespace Bluetooth
     BleScanResult scan_results[SCAN_RESULT_MAX];
     BluetoothConnection sensor_node_1;
     BluetoothConnection sensor_node_2;
-    uint8_t num_connections = 0;
+
     os_queue_t sn1_disconnect_queue;
     os_queue_t sn2_disconnect_queue;
 
@@ -64,7 +64,10 @@ namespace Bluetooth
         bool disconnectFlag = true;
         os_queue_put(sn1_disconnect_queue, &disconnectFlag, 0, nullptr);
         os_queue_put(sn2_disconnect_queue, &disconnectFlag, 0, nullptr);
+    }
 
+    void Advertise()
+    {
         BleAdvertisingData advData;
         advData.appendServiceUUID(BleUuid(CN_SERVICE_UUID));
         BLE.advertise(advData);
@@ -81,6 +84,8 @@ namespace Bluetooth
                 {
                     BluetoothMessage disconnect{Node::SN2, BluetoothMessageId::DISCONNECT, nullptr};
                     os_queue_put(control_queue, &disconnect, 0, nullptr);
+                    Log.info("Advertising");
+                    Advertise();
                     while (true)
                     {
                         Log.info("Attempting to connect to sensor node 2");
@@ -139,13 +144,24 @@ namespace Bluetooth
                 {
                     connection.device = BLE.connect(result.address());
                     connection.is_connected = true;
-                    if (connection.device.getCharacteristicByUUID(call_button_characteristic_sn1, BleUuid(SN2_CALL_BTN_CHAR_UUID)))
-                    {
-                        Serial.println("Found call button characteristic");
-                    }
+
+                    // auto char_uuids = connection.device.discoverAllCharacteristics();
+                    // Log.info("Connections %d", char_uuids.size());
+                    // for (auto& i : char_uuids)
+                    // {
+                    //     Log.info(i.UUID().toString());
+                    // }
+                    // if (connection.device.getCharacteristicByUUID(call_button_characteristic_sn1, BleUuid(SN1_CALL_BTN_CHAR_UUID)))
+                    // {
+                    //     Serial.println("Found call button characteristic");
+                    // }
                     if (connection.device.getCharacteristicByUUID(temperature_measurement_characteristic, BleUuid(SN2_TEMP_SENS_CHAR_UUID)))
                     {
                         Serial.println("Found temperature characteristic");
+                    }
+                    if (connection.device.getCharacteristicByUUID(call_button_characteristic_sn2, BleUuid(SN2_CALL_BTN_CHAR_UUID)))
+                    {
+                        Serial.println("Found SN2 call button characteristic");
                     }
                     else
                     {
@@ -223,6 +239,7 @@ namespace Bluetooth
         //     Log.error("Invalid peer in call button callback");
         //     return;
         // }
+        Log.info("Call button SN2");
         BluetoothMessage message{Node::SN2, BluetoothMessageId::CALL_BTN, data};
         os_queue_put(control_queue, &message, 0, NULL);
     }

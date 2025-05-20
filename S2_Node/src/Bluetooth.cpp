@@ -13,22 +13,29 @@ namespace Bluetooth
     BleCharacteristic temperature_reading_characteristic(
         "temperature_reading",
         BleCharacteristicProperty::READ | BleCharacteristicProperty::NOTIFY,
-        SN1_TEMP_SENS_CHAR_UUID, // Characteristic UUID as BleUuid
-        SN1_SERVICE_UUID         // Service UUID as BleUuid
+        SN2_TEMP_SENS_CHAR_UUID, // Characteristic UUID as BleUuid
+        SN2_SERVICE_UUID         // Service UUID as BleUuid
     );
 
     BleCharacteristic call_button_characteristic(
         "call_button",
-        BleCharacteristicProperty::READ | BleCharacteristicProperty::INDICATE,
-        SN1_CALL_BTN_CHAR_UUID, // Characteristic UUID as BleUuid
-        SN1_SERVICE_UUID        // Service UUID as BleUuid
+        BleCharacteristicProperty::READ | BleCharacteristicProperty::NOTIFY,
+        SN2_CALL_BTN_CHAR_UUID, // Characteristic UUID as BleUuid
+        SN2_SERVICE_UUID        // Service UUID as BleUuid
     );
 
     BleCharacteristic power_characteristic(
         "power_characteristic",
+        BleCharacteristicProperty::READ | BleCharacteristicProperty::NOTIFY,
+        SN2_TEMP_SENS_CHAR_UUID, // Characteristic UUID as BleUuid
+        SN2_SERVICE_UUID         // Service UUID as BleUuid
+    );
+
+    BleCharacteristic sound_characteristic(
+        "sound_characteristic",
         BleCharacteristicProperty::READ | BleCharacteristicProperty::INDICATE,
-        SN1_TEMP_SENS_CHAR_UUID, // Characteristic UUID as BleUuid
-        SN1_SERVICE_UUID         // Service UUID as BleUuid
+        SN2_TEMP_SENS_CHAR_UUID, // Characteristic UUID as BleUuid
+        SN2_SERVICE_UUID         // Service UUID as BleUuid
     );
 
     BleCharacteristic fan_duty_characteristic;
@@ -47,13 +54,14 @@ namespace Bluetooth
 #endif
 
         // Add characteristic handlers (for fan duty and call for help ack)
-        // fan_duty_characteristic.onDataReceived(DutyCycleHandler);
+        fan_duty_characteristic.onDataReceived(DutyCycleHandler);
 
         os_queue_create(&connection_queue, sizeof(bool), 1, nullptr);
 
         // Add the sensor service and attach both characteristics.
         BLE.addCharacteristic(temperature_reading_characteristic);
         BLE.addCharacteristic(call_button_characteristic);
+        BLE.addCharacteristic(sound_characteristic);
 
         // BLE.onConnect(onConnectHandler);
         BLE.onDisconnected(onDisconnectHandler);
@@ -64,9 +72,13 @@ namespace Bluetooth
 
         bool disconnectFlag = true;
         os_queue_put(connection_queue, &disconnectFlag, 0, nullptr);
+    }
 
+    void Advertise()
+    {
+        Log.info("Advertising");
         BleAdvertisingData advData;
-        advData.appendServiceUUID(BleUuid(SN1_SERVICE_UUID));
+        advData.appendServiceUUID(BleUuid(SN2_SERVICE_UUID));
         BLE.advertise(advData);
     }
 
@@ -81,6 +93,7 @@ namespace Bluetooth
                 {
                     BluetoothMessage disconnect{Node::SN2, BluetoothMessageId::DISCONNECT, nullptr};
                     os_queue_put(main_queue, &disconnect, 0, nullptr);
+                    Advertise();
                     while (true)
                     {
                         Log.info("Attempting to connect to sensor node 2");
@@ -137,9 +150,26 @@ namespace Bluetooth
         os_queue_put(connection_queue, (void *)control_node_connection.is_connected, 0, nullptr);
     }
 
-    void SendTemperature(const uint8_t temperature)
+    void SendTemperature(const uint16_t temperature)
     {
-        temperature_reading_characteristic.setValue(&temperature, sizeof(uint8_t));
+        temperature_reading_characteristic.setValue((uint8_t*) &temperature, sizeof(uint16_t));
+    }
+
+    void SendButtonPress(const bool value)
+    {
+        Log.info("Button press sent");
+        call_button_characteristic.setValue((uint8_t*) &value, sizeof(uint8_t));
+    }
+
+    void SendSoundEvent(const bool value)
+    {
+        sound_characteristic.setValue((uint8_t*) &value, sizeof(uint8_t));
+    }
+
+    void DutyCycleHandler(const uint8_t* data, size_t len, const BlePeerDevice& peer, void* context)
+    {
+        BluetoothMessage message{Node::SN2, BluetoothMessageId::FAN_DUTY, data};
+        os_queue_put(main_queue, &message, 0, nullptr);
     }
 
 } // namespace Bluetooth

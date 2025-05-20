@@ -31,6 +31,7 @@ void LED::update_LED(LED_STATE next_state)
         }
         case LED_STATE::GREEN_SOLID:
         {
+            Log.info("Green solid");
             flash_timer.stop();
             solid_green();
             break;

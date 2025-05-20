@@ -22,7 +22,8 @@ enum BluetoothMessageId
     CALL_BTN,
     POWER,
     CONNECT,
-    DISCONNECT
+    DISCONNECT,
+    FAN_DUTY
 };
 
 enum Node

@@ -6,6 +6,7 @@
 #include "SoundLED.h"
 #include "SoundSensor.h"
 #include "Constants.h"
+#include "Bluetooth.h"
 
 namespace SoundSensor
 {
@@ -46,6 +47,9 @@ namespace SoundSensor
             if (os_queue_take(sound_queue, &queue_value, CONCURRENT_WAIT_FOREVER, nullptr) == 0)
             {
                 Log.trace("Got Sound: %d", queue_value);
+
+                // Send bluetooth
+                Bluetooth::SendSoundEvent(queue_value);
 
                 // update LED
                 sound_LED.sound_detected = queue_value;

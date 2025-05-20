@@ -13,5 +13,11 @@ typedef struct
 {
     Node node_id;
     BluetoothMessageId message_type;
-    uint8_t *data;
+    const uint8_t *data;
 } BluetoothMessage;
+
+typedef struct
+{
+    bool controlled;
+    uint8_t duty_cycle;
+} FanDutyCycleMessage;
