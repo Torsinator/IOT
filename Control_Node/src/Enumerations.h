@@ -29,3 +29,9 @@ enum LED_STATE
     RED_FLASHING,
     RED_SOLID
 };
+
+enum LCD_Message
+{
+    NEW_SCREEN,
+    REFRESH
+};
