@@ -8,7 +8,7 @@
 // #include "dct.h" // If not used, comment out or delete
 #include <stdio.h>
 #include <math.h>
-#include "LCD.h" // LCD 
+// #include "LCD.h" // LCD 
 
 SYSTEM_MODE(MANUAL);
 
@@ -138,8 +138,9 @@ void setup()
     potReadings[i] = 0;
   }
 whiteLedEffectivelyOn = false; // LED 초기 상태는 OFF로 가정
-
-  LCD::setup_lcd_display();
+//===============================================================
+  // LCD::setup_lcd_display();
+//===============================================================
   Serial.begin(9600); // Initialize serial communication
   Serial.println("System Initialized. Serial outputs will be time-sliced. Button toggle & LED filter active.");
 }
@@ -315,9 +316,9 @@ void loop()
     Serial.print("Lux Value: ");
     Serial.println(g_lux);
   }
-  //===============================================================
-  LCD::update_lcd_display();
-  //===============================================================
+  // //===============================================================
+  // LCD::update_lcd_display();
+  // //===============================================================
   // MOTION SENSOR AND LED FLASHING
   g_motionValue = digitalRead(motionSensor); // Read value every time
 
