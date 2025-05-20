@@ -85,66 +85,66 @@
 // void loop() {}
 //-------------------------------
 // basic LCD test
-LiquidCrystal_I2C *lcd;
+// LiquidCrystal_I2C *lcd;
 
-void lcdsetup() {
-  Wire.begin();
-  lcd = new LiquidCrystal_I2C(0x27, 16, 2); // 주소 바꿔야 할 수도 있음
-  lcd->init();
-  lcd->backlight();
-  lcd->print("LCD Test!");
-}
+// void setup() {
+//   Wire.begin();
+//   lcd = new LiquidCrystal_I2C(0x27, 16, 2); // 주소 바꿔야 할 수도 있음
+//   lcd->init();
+//   lcd->backlight();
+//   lcd->print("LCD Test!");
+// }
 
-void loopinggg() {}
+// void loop() {}
 
 // ---------------------------
-// // 외부 변수 선언 (main .ino 파일에 정의된 변수들)
-// extern float g_lux;
-// extern float g_totalSn1Energy_mWh; // 새로 추가된 전력 변수
+// 외부 변수 선언 (main .ino 파일에 정의된 변수들)
+extern float g_lux;
+extern float g_totalSn1Energy_mWh; // 새로 추가된 전력 변수
 
-// LiquidCrystal_I2C lcd(0x27, 16, 2);
+LiquidCrystal_I2C lcd(0x27, 16, 2);
 
-// unsigned long lastLcdUpdateTime_lcd = 0;
-// const unsigned long LCD_UPDATE_INTERVAL_LCD = 1000; // 1초마다 LCD 업데이트
+unsigned long lastLcdUpdateTime_lcd = 0;
+const unsigned long LCD_UPDATE_INTERVAL_LCD = 1000; // 1초마다 LCD 업데이트
 
-// namespace LCD {
+namespace LCD {
 
-// void setup_lcd_display()
-// {
-//     lcd.init();
-//     lcd.backlight();
-//     lcd.clear();
-//     // 초기 화면 구성 변경 없음 (또는 필요에 따라 수정)
-//     Serial.println("LCD::setup_lcd_display() called. LCD initialized.");
-// }
+void setup_lcd_display()
+{
+    lcd.init();
+    lcd.backlight();
+    lcd.clear();
+    // 초기 화면 구성 변경 없음 (또는 필요에 따라 수정)
+    Serial.println("LCD::setup_lcd_display() called. LCD initialized.");
+}
 
-// void update_lcd_display()
-// {
-//     unsigned long currentLcdTime = millis();
+void update_lcd_display()
+{
+    unsigned long currentLcdTime = millis();
 
-//     if (currentLcdTime - lastLcdUpdateTime_lcd >= LCD_UPDATE_INTERVAL_LCD)
-//     {
-//         lastLcdUpdateTime_lcd = currentLcdTime;
+    if (currentLcdTime - lastLcdUpdateTime_lcd >= LCD_UPDATE_INTERVAL_LCD)
+    {
+        lastLcdUpdateTime_lcd = currentLcdTime;
 
-//         // 첫 번째 줄: Lux 값 표시
-//         char luxBuffer[17];
-//         sprintf(luxBuffer, "Lux: %.1f", g_lux);
-//         lcd.setCursor(0, 0);
-//         for (int i = 0; i < 16; i++) { lcd.print(" "); } // 줄 지우기
-//         lcd.setCursor(0, 0);
-//         lcd.print(luxBuffer);
+        // 첫 번째 줄: Lux 값 표시
+        char luxBuffer[17];
+        sprintf(luxBuffer, "Lux: %.1f", g_lux);
+        lcd.setCursor(0, 0);
+        for (int i = 0; i < 16; i++) { lcd.print(" "); } // 줄 지우기
+        lcd.setCursor(0, 0);
+        lcd.print(luxBuffer);
 
-//         // 두 번째 줄: 누적 전력 사용량 표시
-//         char powerBuffer[17];
-//         // g_totalSn1Energy_mWh 값을 mWh 단위로 표시
-//         sprintf(powerBuffer, "Pwr: %.1fmWh", g_totalSn1Energy_mWh); // 소수점 한자리까지
-//         lcd.setCursor(0, 1);
-//         for (int i = 0; i < 16; i++) { lcd.print(" "); } // 줄 지우기
-//         lcd.setCursor(0, 1);
-//         lcd.print(powerBuffer);
+        // 두 번째 줄: 누적 전력 사용량 표시
+        char powerBuffer[17];
+        // g_totalSn1Energy_mWh 값을 mWh 단위로 표시
+        sprintf(powerBuffer, "Pwr: %.1fmWh", g_totalSn1Energy_mWh); // 소수점 한자리까지
+        lcd.setCursor(0, 1);
+        for (int i = 0; i < 16; i++) { lcd.print(" "); } // 줄 지우기
+        lcd.setCursor(0, 1);
+        lcd.print(powerBuffer);
 
-//         Serial.print("LCD Update - Lux: "); Serial.print(g_lux);
-//         Serial.print(" | Power: "); Serial.println(g_totalSn1Energy_mWh);
-//     }
-// }
-// }
+        Serial.print("LCD Update - Lux: "); Serial.print(g_lux);
+        Serial.print(" | Power: "); Serial.println(g_totalSn1Energy_mWh);
+    }
+}
+}
