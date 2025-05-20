@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Particle.h"
+
 class MutexLockGuard {
     public:
         MutexLockGuard(os_mutex_t* mutex) : mutex_(mutex) {
