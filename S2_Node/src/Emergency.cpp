@@ -9,6 +9,7 @@
 #include "Emergency.h"
 #include "Constants.h"
 #include "CallLED.h"
+#include "Bluetooth.h"
 
 namespace Emergency
 {
@@ -24,7 +25,7 @@ namespace Emergency
     {
         os_queue_create(&button_queue, sizeof(bool), 1, nullptr);
         attachInterrupt(PUSH_BTN, ButtonCallback, FALLING);
-        CALL_LED.powered_on = true;    // Set LED to powered on
+        CALL_LED.powered_on = true; // Set LED to powered on
         CALL_LED.get_next_state();
         CALL_LED.update_LED();
         new Thread("Emergency_Thread", Emergency::RunEmergencyThread);
@@ -34,7 +35,7 @@ namespace Emergency
     void ButtonCallback(void)
     {
         // Add the button press to the queue
-        os_queue_put(button_queue, (void *) true, 0, nullptr);
+        os_queue_put(button_queue, (void *)true, 0, nullptr);
     }
 
     // Debounce callback
@@ -67,6 +68,9 @@ namespace Emergency
                         Log.trace("Call button deactivated");
                         CALL_LED.call_deactivated = true;
                     }
+                    // Send notification via ble
+                    Bluetooth::SendButtonPress(CALL_LED.call_button_pressed);
+                    
                     // Update the LED state
                     CALL_LED.get_next_state();
                     CALL_LED.update_LED();

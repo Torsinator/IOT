@@ -9,4 +9,7 @@ namespace Fan
     void Setup();
     void FanEdgeCallback(void);
     void FanCountTimerCallback();
+    void SetOverrideStatus(bool status);
+    void SetDutyCycle(double duty);
+    double GetDutyCycle();
 } // namespace Fan

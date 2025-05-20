@@ -3,6 +3,7 @@
 
 #include "Temperature.h"
 #include "Constants.h"
+#include "Bluetooth.h"
 
 namespace Temperature
 {
@@ -31,8 +32,8 @@ namespace Temperature
         uint16_t count = 0;
         while (true)
         {
-            // Check for top of the second
-            if (count >= TEMPERATURE_MEASURE_RATE_HZ)
+            // Check for send to bluetooth period
+            if (count >= TEMPERATURE_SEND_RATE_S * TEMPERATURE_MEASURE_RATE_HZ)
             {
                 // Apply inverse transfer function to get temperature
                 // divide by count to get 10 point average
@@ -40,6 +41,9 @@ namespace Temperature
                 temperature_data = 0;
                 count = 0;
                 Log.info("Temperature Reading: %.2f degrees celcius", temp);
+
+                // Send the temperature multiplied by 100
+                Bluetooth::SendTemperature(temp * 100);
             }
             // Add the ADC value to the temperature data
             temperature_data += analogRead(TEMP_SENS);
