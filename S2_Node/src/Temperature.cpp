@@ -43,7 +43,7 @@ namespace Temperature
                 Log.info("Temperature Reading: %.2f degrees celcius", temp);
 
                 // Send the temperature multiplied by 100
-                Bluetooth::SendTemperature(temp * 100);
+                Bluetooth::SendTemperature((uint16_t) (temp * 100));
             }
             // Add the ADC value to the temperature data
             temperature_data += analogRead(TEMP_SENS);

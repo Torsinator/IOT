@@ -24,7 +24,7 @@ const uint16_t SOUND_TIMEOUT_MS = 5000;
 const uint16_t BTN_DEBOUNCE_MS = 500;
 
 // Fan
-const double POT_THRESHOLD = 10.0;
+const double POT_THRESHOLD = 20.0;
 const uint32_t PWM_FREQUENCY = 25e3;
 const uint16_t FAN_COUNT_PERIOD_MS = 1000;
 

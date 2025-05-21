@@ -13,6 +13,7 @@ namespace Bluetooth
     void Advertise();
     void ControlNodeConnectionThread();
     void onDisconnectHandler(const BlePeerDevice &peer);
+    void onConnectHandler(const BlePeerDevice &peer);
     void DutyCycleHandler(const uint8_t* data, size_t len, const BlePeerDevice& peer, void* context);
     void SendTemperature(const uint16_t temperature);
     void SendButtonPress(const bool value);
