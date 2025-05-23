@@ -34,8 +34,8 @@ void setup()
     pinMode(LED_2_RED, OUTPUT);
     os_queue_create(&control_queue, sizeof(BluetoothMessage), 10, nullptr);
     os_queue_create(&lcd_message_queue, sizeof(LCD_Message), 10, nullptr);
-    Bluetooth::Setup();
     LCD::Setup();
+    Bluetooth::Setup();
 }
 
 void loop()
