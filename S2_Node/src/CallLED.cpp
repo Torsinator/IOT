@@ -18,7 +18,14 @@ void CallLED::get_next_state()
     {
         if (powered_on)
         {
-            next_state = LED_STATE::GREEN_FLASHING;
+            if (bluetooth_connection)
+            {
+                next_state = LED_STATE::GREEN_SOLID;
+            }
+            else
+            {
+                next_state = LED_STATE::GREEN_FLASHING;
+            }
         }
         else
         {
@@ -54,7 +61,14 @@ void CallLED::get_next_state()
         else if (call_deactivated)
         {
             call_deactivated = false;
-            next_state = LED_STATE::GREEN_FLASHING;
+            if (bluetooth_connection)
+            {
+                next_state = LED_STATE::GREEN_SOLID;
+            }
+            else
+            {
+                next_state = LED_STATE::GREEN_FLASHING;
+            }
         }
         break;
     }
@@ -63,7 +77,14 @@ void CallLED::get_next_state()
         if (call_deactivated)
         {
             call_deactivated = false;
-            next_state = LED_STATE::GREEN_FLASHING;
+            if (bluetooth_connection)
+            {
+                next_state = LED_STATE::GREEN_SOLID;
+            }
+            else
+            {
+                next_state = LED_STATE::GREEN_FLASHING;
+            }
         }
         break;
     }

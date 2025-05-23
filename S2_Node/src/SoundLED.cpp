@@ -4,11 +4,15 @@
 #include "SoundLED.h"
 #include "Enumerations.h"
 #include "Constants.h"
+#include "Bluetooth.h"
 
-SoundLED::SoundLED(uint16_t red_pin, uint16_t green_pin, uint16_t timer_flash_period_ms) : LED(red_pin, green_pin, timer_flash_period_ms), timeout(SOUND_TIMEOUT_MS, std::bind(&SoundLED::TimeoutCallback, this), true) {}
+SoundLED::SoundLED(uint16_t red_pin, uint16_t green_pin, uint16_t timer_flash_period_ms) : LED(red_pin, green_pin, timer_flash_period_ms), timeout(SOUND_TIMEOUT_MS, std::bind(&SoundLED::TimeoutCallback, this), true)
+{
+}
 
 void SoundLED::get_next_state()
 {
+    os_mutex_lock(led_mutex);
     next_state = current_state;
     switch (current_state)
     {
@@ -38,6 +42,7 @@ void SoundLED::get_next_state()
             timer_is_running = false;
             sound_timeout = false;
             next_state = LED_STATE::OFF;
+            Bluetooth::SendSoundEvent(false);
         }
         else if (timer_is_running && sound_detected)
         {
@@ -63,6 +68,7 @@ void SoundLED::get_next_state()
     default:
         break;
     }
+    os_mutex_unlock(led_mutex);
 }
 
 void SoundLED::TimeoutCallback()

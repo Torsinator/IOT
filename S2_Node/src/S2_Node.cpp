@@ -29,6 +29,9 @@ os_queue_t main_queue;
 
 uint8_t value = 0;
 
+CallLED CALL_LED(CALL_LED_RED, CALL_LED_GREEN);
+SoundLED sound_LED(SOUND_LED_RED, SOUND_LED_GREEN);
+
 // setup() runs once, when the device is first turned on
 void setup()
 {
@@ -75,15 +78,6 @@ bool Connect(BluetoothConnection &connection)
     return false;
 }
 
-// void loop()
-// {
-//     // Will use this thread to communicate with the control node in part 2
-//     Bluetooth::SendTemperature(value);
-//     value++;
-//     Log.info("Sent Temp data %d", value);
-//     delay(10000);
-// }
-
 void loop()
 {
     BluetoothMessage message;
@@ -95,16 +89,26 @@ void loop()
         case CONNECT:
         {
             Log.info("In Connect");
+            CALL_LED.bluetooth_connection = true;
+            CALL_LED.get_next_state();
+            CALL_LED.update_LED();
             break;
         }
         case DISCONNECT:
         {
             Log.info("In Disconnect");
+            CALL_LED.bluetooth_connection = false;
+            CALL_LED.get_next_state();
+            CALL_LED.update_LED();
             break;
         }
         case LIGHT:
         {
             Log.info("Got Light Message");
+            bool* light_status = (bool *) message.data;
+            sound_LED.lights_on = *light_status;
+            sound_LED.get_next_state();
+            sound_LED.update_LED();
             break;
         }
         case CALL_BTN:
@@ -115,7 +119,7 @@ void loop()
         case FAN_DUTY:
         {
             Log.info("Got Fan Duty Message");
-            FanDutyCycleMessage* duty_message = (FanDutyCycleMessage*) message.data;
+            FanDutyCycleMessage *duty_message = (FanDutyCycleMessage *)message.data;
             Fan::SetDutyCycle(duty_message->duty_cycle);
             Fan::SetOverrideStatus(duty_message->controlled);
             break;

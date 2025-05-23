@@ -8,11 +8,12 @@
 #include "Constants.h"
 #include "Bluetooth.h"
 
+extern SoundLED sound_LED;
+
 namespace SoundSensor
 {
     // Set up queue and LED variables
     os_queue_t sound_queue;
-    SoundLED sound_LED(SOUND_LED_RED, SOUND_LED_GREEN);
 
     // Setup function called from main
     void Setup()

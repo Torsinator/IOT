@@ -11,6 +11,8 @@
 #include "CallLED.h"
 #include "Bluetooth.h"
 
+extern CallLED CALL_LED;
+
 namespace Emergency
 {
     // Set up variables
@@ -18,7 +20,6 @@ namespace Emergency
     std::atomic_bool debouncing = false;
     os_queue_t button_queue;
     Timer debounce_timer(BTN_DEBOUNCE_MS, DebounceCallback, true);
-    CallLED CALL_LED(CALL_LED_RED, CALL_LED_GREEN);
 
     // Setup and initialize threads and interrupts
     void Setup()

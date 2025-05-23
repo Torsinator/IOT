@@ -72,7 +72,8 @@ void loop()
         case TEMPERATURE:
         {
             /* code */
-            data_manager.SetTemperatureLevel((double) *message.data * 100.0);
+            data_manager.SetTemperatureLevel((*(uint16_t*) message.data) / 100.0);
+            Log.info("Got Temperature: %.2f", data_manager.GetTemperatureLevel());
             break;
         }
         case LIGHT:
