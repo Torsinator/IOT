@@ -30,6 +30,7 @@ os_queue_t main_queue;
 uint8_t value = 0;
 
 CallLED CALL_LED(CALL_LED_RED, CALL_LED_GREEN);
+SoundLED sound_LED(SOUND_LED_RED, SOUND_LED_GREEN);
 
 // setup() runs once, when the device is first turned on
 void setup()
@@ -104,6 +105,10 @@ void loop()
         case LIGHT:
         {
             Log.info("Got Light Message");
+            bool* light_status = (bool *) message.data;
+            sound_LED.lights_on = *light_status;
+            sound_LED.get_next_state();
+            sound_LED.update_LED();
             break;
         }
         case CALL_BTN:

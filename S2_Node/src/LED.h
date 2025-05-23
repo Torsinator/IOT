@@ -19,6 +19,7 @@ public:
 protected:
     LED_STATE current_state = LED_STATE::INIT;
     LED_STATE next_state = LED_STATE::INIT;
+    os_mutex_t led_mutex;
 
 private:
     void timer_callback(void);

@@ -18,6 +18,7 @@ namespace Bluetooth
     BleCharacteristic call_button_characteristic_sn2;
     BleCharacteristic temperature_measurement_characteristic;
     BleCharacteristic sound_characteristic;
+    BleCharacteristic light_on_off_characteristic;
 
     // Fan duty cycle updates
     BleCharacteristic fan_duty_cycle_characteristic;
@@ -146,7 +147,7 @@ namespace Bluetooth
 
                     auto char_uuids = connection.device.discoverAllCharacteristics();
                     Log.info("Connections %d", char_uuids.size());
-                    for (auto& i : char_uuids)
+                    for (auto &i : char_uuids)
                     {
                         Log.info(i.UUID().toString());
                     }
@@ -159,6 +160,10 @@ namespace Bluetooth
                         Serial.println("Found temperature characteristic");
                     }
                     if (connection.device.getCharacteristicByUUID(call_button_characteristic_sn2, BleUuid(SN2_CALL_BTN_CHAR_UUID)))
+                    {
+                        Serial.println("Found SN2 call button characteristic");
+                    }
+                    if (connection.device.getCharacteristicByUUID(light_on_off_characteristic, BleUuid(CN_LIGHT_INDICATOR_UUID)))
                     {
                         Serial.println("Found SN2 call button characteristic");
                     }

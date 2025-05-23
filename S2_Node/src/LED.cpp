@@ -9,7 +9,11 @@ LED::LED(uint16_t red_pin, uint16_t green_pin, uint16_t timer_flash_period_ms) :
                                                                                  green_pin(green_pin),
                                                                                  timer_flash_period_ms(timer_flash_period_ms),
                                                                                  flash_timer(timer_flash_period_ms, [this]
-                                                                                             { this->timer_callback(); }) { update_LED(); }
+                                                                                             { this->timer_callback(); })
+{
+    os_mutex_create(&led_mutex);
+    update_LED();
+}
 
 // Function to update the LED output
 void LED::update_LED()

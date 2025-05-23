@@ -17,6 +17,7 @@ const char SN2_CALL_BTN_CHAR_UUID[] = "ea10002-eeb4-43c3-afef-6423cce071ae";
 const char SN2_SOUND_UUID[] = "ea10003-eeb4-43c3-afef-6423cce071ae";
 const char CN_SERVICE_UUID[] = "ea20000-eeb4-43c3-afef-6423cce071ae";
 const char CN_FAN_DUTY_CHAR_UUID[] = "ea20001-eeb4-43c3-afef-6423cce071ae";
+const char CN_LIGHT_INDICATOR_UUID[] = "ea20002-eeb4-43c3-afef-6423cce071ae";
 
 // bluetooth scan results
 const size_t SCAN_RESULT_MAX = 30;

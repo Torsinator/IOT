@@ -45,6 +45,13 @@ namespace Bluetooth
         SN2_SERVICE_UUID       // Service UUID as BleUuid
     );
 
+    BleCharacteristic light_on_off_characteristic(
+        "fan_duty_cycle_override",
+        BleCharacteristicProperty::WRITE,
+        CN_LIGHT_ON_OFF_UUID, // Characteristic UUID as BleUuid
+        SN2_SERVICE_UUID      // Service UUID as BleUuid
+    );
+
     // BleCharacteristic fan_duty_characteristic;
 
     BluetoothConnection control_node_connection;
@@ -70,6 +77,9 @@ namespace Bluetooth
         BLE.addCharacteristic(call_button_characteristic);
         BLE.addCharacteristic(sound_characteristic);
         BLE.addCharacteristic(fan_duty_characteristic);
+        BLE.addCharacteristic(light_on_off_characteristic);
+
+        light_on_off_characteristic.onDataReceived(LightOnOffHandler);
 
         BLE.onConnected(onConnectHandler);
         BLE.onDisconnected(onDisconnectHandler);
@@ -184,6 +194,12 @@ namespace Bluetooth
     void DutyCycleHandler(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context)
     {
         BluetoothMessage message{Node::SN2, BluetoothMessageId::FAN_DUTY, data};
+        os_queue_put(main_queue, &message, 0, nullptr);
+    }
+
+    void LightOnOffHandler(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context)
+    {
+        BluetoothMessage message{Node::SN2, BluetoothMessageId::LIGHT, data};
         os_queue_put(main_queue, &message, 0, nullptr);
     }
 
