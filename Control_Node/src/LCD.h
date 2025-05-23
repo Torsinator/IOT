@@ -9,6 +9,12 @@ namespace LCD
     void setup_lcd_display();
 
     // LCD display update funtion
-    void update_lcd_display(); // basic LCD update
+    void update_lcd_display_content(); // basic LCD update
+
+    void processLcdQueueAndUpdate();
+
+    void cycleLcdScreen();
+
+    void Setup();
 }
 #endif

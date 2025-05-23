@@ -5,6 +5,8 @@
 #include "Bluetooth.h"
 #include "DataManager.h"
 #include "LED.h"
+#include "LCD.h"
+#include "Enumerations.h"
 
 SYSTEM_MODE(MANUAL);
 
@@ -21,19 +23,25 @@ LED led_2(LED_2_RED, LED_2_GREEN);
 LED led_3(LED_3_RED, LED_3_GREEN);
 
 // void onDataReceived(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context);
+// Tae's edit
+os_queue_t lcd_message_queue; // LCD.cpp의 선언과 동일해야 함
+
+
 
 void setup()
 {
     pinMode(LED_2_GREEN, OUTPUT);
     pinMode(LED_2_RED, OUTPUT);
     os_queue_create(&control_queue, sizeof(BluetoothMessage), 10, nullptr);
+    os_queue_create(&lcd_message_queue, sizeof(LCD_Message), 10, nullptr);
     Bluetooth::Setup();
+    LCD::Setup();
 }
 
 void loop()
 {
     BluetoothMessage message;
-    if (os_queue_take(control_queue, &message, CONCURRENT_WAIT_FOREVER, nullptr) == 0)
+    if (os_queue_take(control_queue, &message, CONCURRENT_WAIT_FOREVER, nullptr) == 0) // Tae modify
     {
         Log.info("Got queue item: %d", message.message_type);
         switch (message.message_type)

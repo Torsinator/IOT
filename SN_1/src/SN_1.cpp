@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <math.h>
 // #include "LCD.h" // LCD 
+// View logs with CLI using 'particle serial monitor --follow'
 
 SYSTEM_MODE(MANUAL);
 
