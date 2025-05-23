@@ -138,9 +138,12 @@ void setup()
     potReadings[i] = 0;
   }
 whiteLedEffectivelyOn = false; // LED 초기 상태는 OFF로 가정
-//===============================================================
+  //===============================================================
+
   // LCD::setup_lcd_display();
-//===============================================================
+
+    //===============================================================
+
   Serial.begin(9600); // Initialize serial communication
   Serial.println("System Initialized. Serial outputs will be time-sliced. Button toggle & LED filter active.");
 }
@@ -317,9 +320,7 @@ void loop()
     Serial.println(g_lux);
   }
   //===============================================================
-
   // LCD::update_lcd_display();
-
   //===============================================================
   // MOTION SENSOR AND LED FLASHING
   g_motionValue = digitalRead(motionSensor); // Read value every time

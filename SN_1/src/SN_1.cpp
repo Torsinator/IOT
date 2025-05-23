@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <math.h>
 // #include "LCD.h" // LCD 
+// View logs with CLI using 'particle serial monitor --follow'
 
 SYSTEM_MODE(MANUAL);
 
@@ -316,11 +317,9 @@ void loop()
     Serial.print("Lux Value: ");
     Serial.println(g_lux);
   }
-  //===============================================================
-
+  // //===============================================================
   // LCD::update_lcd_display();
-
-  //===============================================================
+  // //===============================================================
   // MOTION SENSOR AND LED FLASHING
   g_motionValue = digitalRead(motionSensor); // Read value every time
 
