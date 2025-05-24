@@ -28,7 +28,7 @@ public:
     // SN1
     void SetConnectedSN1(bool value);
     void SetCallButtonActivatedSN1(bool value);
-    void SetLightLevel(double value);
+    void SetLightLevel(uint8_t value);
     void SetPowerSN1(uint16_t value);
 
     // SN2

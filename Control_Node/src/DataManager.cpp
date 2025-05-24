@@ -77,6 +77,7 @@ uint16_t DataManager::GetPowerSN2()
 void DataManager::SetConnectedSN1(bool value)
 {
     MutexLockGuard lock(&data_mutex);
+    sn1_data.connected = value;
 }
 
 void DataManager::SetCallButtonActivatedSN1(bool value)
@@ -85,7 +86,7 @@ void DataManager::SetCallButtonActivatedSN1(bool value)
     sn1_data.call_button_activated = value;
 }
 
-void DataManager::SetLightLevel(double value)
+void DataManager::SetLightLevel(uint8_t value)
 {
     MutexLockGuard lock(&data_mutex);
     sn1_data.light_level = value;

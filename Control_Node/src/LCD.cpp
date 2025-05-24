@@ -64,9 +64,6 @@ namespace LCD
         // LCD 업데이트 큐에 NEW_SCREEN 메시지 전송
         LCD_Message msg_type = LCD_Message::NEW_SCREEN;         // enumeration.h의 enum 사용
         os_queue_put(lcd_message_queue, &msg_type, 0, nullptr); // 큐에 메시지 넣기 (non-blocking)
-
-        Serial.print("LCD Screen cycled, sent NEW_SCREEN to queue. New screen: ");
-        Serial.println((int)currentScreen);
     }
     // OLD CODE BELOW
     // // 타이머에 의해 호출될 함수 (화면 전환 로직)
@@ -130,17 +127,16 @@ namespace LCD
 
             if (result == 0)
             { // 메시지를 성공적으로 가져온 경우
-                Serial.print("LCD::processLcdQueueAndUpdate: Successfully took message from queue! Type: ");
-                Serial.println((int)received_msg_type);
+
 
                 if (received_msg_type == LCD_Message::NEW_SCREEN)
                 {
-                    Serial.println("LCD::processLcdQueueAndUpdate: It's a NEW_SCREEN message. Updating display content.");
+                    // Serial.println("LCD::processLcdQueueAndUpdate: It's a NEW_SCREEN message. Updating display content.");
                     update_lcd_display_content();
                 }
                 else if (received_msg_type == LCD_Message::REFRESH)
                 {
-                    Serial.println("LCD::processLcdQueueAndUpdate: It's a REFRESH message. Updating display content.");
+                    // Serial.println("LCD::processLcdQueueAndUpdate: It's a REFRESH message. Updating display content.");
                     update_lcd_display_content();
                 }
                 else
@@ -198,7 +194,6 @@ namespace LCD
         lcd.print(buffer1);
         lcd.setCursor(0, 1);
         lcd.print(buffer2);
-        Serial.println("LCD content updated.");
     }
 
     // old code
