@@ -14,8 +14,10 @@ namespace Bluetooth
     void SensorNode2Thread();
     void Advertise();
     void onDisconnectHandler(const BlePeerDevice &peer);
-    void CallButtonSN1(const uint8_t* data, size_t len, const BlePeerDevice& peer, void* context);
-    void CallButtonSN2(const uint8_t* data, size_t len, const BlePeerDevice& peer, void* context);
-    void SoundHandler(const uint8_t* data, size_t len, const BlePeerDevice& peer, void* context);
-    void TemperatureHandler(const uint8_t* data, size_t len, const BlePeerDevice& peer, void* context);
+    void CallButtonSN1(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context);
+    void CallButtonSN2(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context);
+    void SoundHandler(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context);
+    void TemperatureHandler(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context);
+    void LuxHandlerSN1(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context);
+
 }

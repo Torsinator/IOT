@@ -71,6 +71,26 @@ const unsigned long LUX_PRINT_INTERVAL = 2000; // Print Lux value every 2 second
 unsigned long lastMotionValPrintTime = 0;
 const unsigned long MOTION_VAL_PRINT_INTERVAL = 1000; // Print Motion Sensor Raw value every 1 second
 
+
+// --- Bluetooth LE ---
+// 서비스 UUID (컨트롤 노드가 이 UUID를 가진 장치를 찾음)
+// 컨트롤 노드의 Constants.h에 있는 SN_PHOTON2_SERVICE_UUID와 동일해야 함
+const char SN1_SERVICE_UUID[] = "ea30000-eeb4-43c3-afef-6423cce071ae";
+
+// 밝기 특성 UUID (컨트롤 노드가 이 UUID를 통해 밝기 값을 읽음)
+// 컨트롤 노드의 Constants.h에 있는 SN_PHOTON2_LUX_CHAR_UUID와 동일해야 함
+const char SN1_LUX_CHAR_UUID[] = "ea30001-eeb4-43c3-afef-6423cce071ae";
+
+// BLE 특성 객체 선언
+BleCharacteristic luxCharacteristic(
+    "lux_level", // 특성 이름 (디버깅용, 자유롭게 설정 가능)
+    BleCharacteristicProperty::READ | BleCharacteristicProperty::NOTIFY, // 읽기 가능하고, 값이 변경되면 알림(Notify)
+    SN1_LUX_CHAR_UUID,  // 위에서 정의한 밝기 특성 UUID
+    SN1_SERVICE_UUID    // 위에서 정의한 서비스 UUID
+);
+// --------------------
+
+
 void setup()
 {
   pinMode(motionSensor, INPUT);
@@ -102,6 +122,25 @@ void setup()
 
   Serial.begin(9600);                    // Initialize serial communication
   Serial.println("System Initialized. Serial outputs will be time-sliced. Button toggle & LED filter active.");
+
+  // --- Bluetooth LE Setup ---
+  BLE.on(); // BLE 모듈 켜기
+
+  // 정의한 밝기 특성 추가
+  BLE.addCharacteristic(luxCharacteristic);
+
+  // 광고 데이터 설정
+  BleAdvertisingData advData;
+  advData.appendServiceUUID(BleUuid(SN1_SERVICE_UUID)); // 서비스 UUID를 광고에 포함
+  // 필요하다면 장치 이름도 광고에 추가할 수 있습니다.
+  // advData.appendLocalName("MyLuxSensorNode");
+
+  // 광고 시작 (컨트롤 노드가 이 장치를 찾을 수 있도록)
+  BLE.advertise(&advData);
+  Serial.println("BLE Advertising started with Lux characteristic.");
+  // ------------------------
+
+
 }
 
 void loop()
@@ -184,6 +223,24 @@ void loop()
     Serial.print("Lux Value: ");
     Serial.println(g_lux);
   }
+
+
+  // --- Send Lux value via Bluetooth LE ---
+  if (BLE.connected()) { // 컨트롤 노드가 연결되어 있을 때만 전송
+    // g_lux (float) 값을 uint8_t (0-255)로 변환
+    // 예시: g_lux 값이 0 ~ 500 범위라고 가정하고, 이를 0 ~ 255로 매핑
+    // 실제 g_lux 값의 범위를 확인하고 적절히 스케일링하세요.
+    // 만약 g_lux가 보통 255를 넘지 않는다면, 단순 constrain만으로도 충분할 수 있습니다.
+    uint8_t lux_for_ble = (uint8_t)constrain(round(g_lux), 0, 255); // round()로 반올림 후 constrain
+
+    // 만약 g_lux의 최대값이 1000 정도라면, 다음과 같이 스케일링 할 수 있습니다.
+    // float scaled_lux = (g_lux / 1000.0) * 255.0; // 0-1000 lux를 0-255로 스케일링
+    // uint8_t lux_for_ble = (uint8_t)constrain(round(scaled_lux), 0, 255);
+
+    luxCharacteristic.setValue(lux_for_ble); // 변환된 uint8_t 값을 특성에 설정 (Notify 자동 발생)
+    // Serial.print("Sent Lux via BLE: "); Serial.println(lux_for_ble); // 디버깅용
+  }
+  // -------------------------------------
   //===============================================================
 
   //===============================================================

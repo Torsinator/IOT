@@ -20,6 +20,8 @@ namespace Bluetooth
     BleCharacteristic sound_characteristic;
     BleCharacteristic light_on_off_characteristic;
 
+    BleCharacteristic lux_characteristic_sn1; // <--- SN1 lux characteristic
+
     // Fan duty cycle updates
     BleCharacteristic fan_duty_cycle_characteristic;
     //     "fan_duty_cycle_override",
@@ -46,12 +48,16 @@ namespace Bluetooth
         sound_characteristic.onDataReceived(SoundHandler, NULL);
         temperature_measurement_characteristic.onDataReceived(TemperatureHandler, NULL);
 
+        lux_characteristic_sn1.onDataReceived(LuxHandlerSN1, NULL); // <--- SN1 lux callback
+
         BLE.onDisconnected(onDisconnectHandler);
 
         // Set UUIDs and values for the sensor nodes
         sensor_node_2.service_uuid = BleUuid(SN2_SERVICE_UUID);
         sensor_node_2.is_connected = false;
-        // TODO: add SN2 UUID
+        // TODO: add SN1 UUID
+        sensor_node_1.service_uuid = BleUuid(SN1_SERVICE_UUID);
+        sensor_node_1.is_connected = false;
 
         // Create disconnect queues
         os_queue_create(&sn1_disconnect_queue, sizeof(bool), 1, nullptr);
@@ -60,6 +66,7 @@ namespace Bluetooth
         // Create connection watchdog threads
         // new Thread("Bluetooth_SN1_Thread", SensorNode1Thread);
         new Thread("Bluetooth_SN2_Thread", SensorNode2Thread);
+        new Thread("Bluetooth_SN1_Thread", SensorNode1Thread);
 
         // Connect to the sensor nodes
         bool disconnectFlag = true;
@@ -122,6 +129,8 @@ namespace Bluetooth
                         if (Connect(sensor_node_1))
                         {
                             Log.info("Successfully connected to sensor node 1");
+                            BluetoothMessage connect{Node::SN1, BluetoothMessageId::CONNECT, nullptr};
+                            os_queue_put(control_queue, &connect, 0, nullptr);
                             break;
                         }
                         Log.error("Failed to connect to sensor node 1, retrying in 1s");
@@ -155,25 +164,49 @@ namespace Bluetooth
                     // {
                     //     Serial.println("Found call button characteristic");
                     // }
-                    if (connection.device.getCharacteristicByUUID(temperature_measurement_characteristic, BleUuid(SN2_TEMP_SENS_CHAR_UUID)))
+                    if (connection.service_uuid.toString() == SN2_SERVICE_UUID)
                     {
-                        Serial.println("Found temperature characteristic");
+                        if (connection.device.getCharacteristicByUUID(temperature_measurement_characteristic, BleUuid(SN2_TEMP_SENS_CHAR_UUID)))
+                        {
+                            Serial.println("Found temperature characteristic");
+                        }
+                        if (connection.device.getCharacteristicByUUID(call_button_characteristic_sn2, BleUuid(SN2_CALL_BTN_CHAR_UUID)))
+                        {
+                            Serial.println("Found SN2 call button characteristic");
+                        }
+                        if (connection.device.getCharacteristicByUUID(light_on_off_characteristic, BleUuid(CN_LIGHT_INDICATOR_UUID)))
+                        {
+                            Serial.println("Found SN2 call button characteristic");
+                        }
+                        else
+                        {
+                            Serial.println("Failed to find characteristic");
+                            // BLE.disconnect(connection.device);
+                            return false;
+                        }
                     }
-                    if (connection.device.getCharacteristicByUUID(call_button_characteristic_sn2, BleUuid(SN2_CALL_BTN_CHAR_UUID)))
+                    else // 그 외의 경우 (즉, sensor_node_1, 본인 센서노드)
                     {
-                        Serial.println("Found SN2 call button characteristic");
+                        // 이 블록이 sensor_node_1에 해당합니다.
+                        Log.info("Device is SN1. Discovering SN1 characteristics...");
+                        // SN1_SERVICE_UUID로 연결되었으므로, SN1의 특성을 찾습니다.
+                        // SN_PHOTON2_LUX_CHAR_UUID는 Constants.h에 정의된 SN1의 밝기 특성 UUID여야 합니다.
+                        if (connection.device.getCharacteristicByUUID(lux_characteristic_sn1, BleUuid(SN1_LUX_CHAR_UUID)))
+                        {
+                            Serial.println("Found SN1 Lux characteristic");
+                        }
+                        else
+                        {
+                            Serial.println("ERROR: SN1 Lux characteristic NOT FOUND");
+                            // connection.device.disconnect(); // 필요시 연결 해제
+                            // connection.is_connected = false;
+                            // return false;
+                        }
+                        // SN1에 버튼 기능이 있다면 여기서 추가
+                        // if (connection.device.getCharacteristicByUUID(call_button_characteristic_sn1, BleUuid(SN1_CALL_BTN_CHAR_UUID))) {
+                        //    Serial.println("Found SN1 call button characteristic");
+                        // }
                     }
-                    if (connection.device.getCharacteristicByUUID(light_on_off_characteristic, BleUuid(CN_LIGHT_INDICATOR_UUID)))
-                    {
-                        Serial.println("Found SN2 call button characteristic");
-                    }
-                    else
-                    {
-                        Serial.println("Failed to find characteristic");
-                        BLE.disconnect(connection.device);
-                        return false;
-                    }
-
                     Log.info("Successfully connected to device: %s", connection.service_uuid.toString().c_str());
                     return true;
                 }
@@ -261,4 +294,25 @@ namespace Bluetooth
         os_queue_put(control_queue, &message, 0, nullptr);
     }
 
+    void LuxHandlerSN1(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context)
+    {
+        if (len > 0 && data != nullptr)
+        {
+            // // uint8_t received_lux_value = data[0];
+            // // Log.info("SN1 Lux data received via BLE: %u", received_lux_value);
+            // BluetoothMessage message{Node::SN1, BluetoothMessageId::LIGHT, data};
+            // Log.info("SN1 Lux data received via BLE: %u", *message.data);
+            // os_queue_put(control_queue, &message, 0, nullptr);
+
+            uint8_t received_lux_value = data[0];
+            Log.info("SN1 Lux data received via BLE: %u", received_lux_value);
+
+            BluetoothMessage message;
+            message.node_id = Node::SN1;
+            message.message_type = BluetoothMessageId::LIGHT;
+            // message.value_data = received_lux_value; // <<<< 값을 직접 복사!
+            message.data_payload.byte_data = received_lux_value;
+            os_queue_put(control_queue, &message, 0, nullptr);
+        }
+    }
 } // namespace Bluetooth
