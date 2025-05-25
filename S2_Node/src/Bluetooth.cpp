@@ -233,4 +233,10 @@ namespace Bluetooth
         }
     }
 
+    void SendDutyCycle(const uint8_t value)
+    {
+        Log.info("Sending duty cycle: %d", value);
+        fan_duty_characteristic.setValue((uint8_t *)&value, sizeof(uint8_t));
+    }
+
 } // namespace Bluetooth

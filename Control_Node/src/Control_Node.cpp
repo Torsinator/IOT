@@ -7,7 +7,9 @@
 #include "LED.h"
 #include "LCD.h"
 #include "Enumerations.h"
+#include "PowerEstimator.h"
 
+// particle serial monitor --follow
 SYSTEM_MODE(MANUAL);
 
 SYSTEM_THREAD(ENABLED);
@@ -25,6 +27,7 @@ LED led_3(LED_3_RED, LED_3_GREEN);
 // void onDataReceived(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context);
 // Tae's edit
 os_queue_t lcd_message_queue; // LCD.cpp의 선언과 동일해야 함
+Timer powerCalculationTimer(30000, PowerEstimator::calculateAndStorePowerUsage30s); // 30초마다 호출
 
 void setup()
 {
@@ -36,6 +39,8 @@ void setup()
     os_queue_create(&lcd_message_queue, sizeof(LCD_Message), 10, nullptr);
     LCD::Setup();
     Bluetooth::Setup();
+    PowerEstimator::setup(data_manager); // PowerEstimator 초기화, DataManager 인스턴스 전달
+    powerCalculationTimer.start(); // 30초 타이머 시작
     led_1.update_LED(LED_STATE::OFF);
     led_2.update_LED(LED_STATE::OFF);
     led_3.update_LED(LED_STATE::OFF);
@@ -87,7 +92,25 @@ void loop()
         }
         case BluetoothMessageId::LIGHT:
         {
+            if (message.node_id == Node::SN1)
+            {
+                uint8_t lux_value_from_sn1 = message.data_payload.byte_data;
+                Log.info("CtrlNode - Value in case LIGHT from message.value_data: %u", lux_value_from_sn1);
 
+                data_manager.SetLightLevel((double)lux_value_from_sn1);
+                // Log.info("SN1 Lux updated in DataManager: %u", lux_value_from_sn1); // 이 로그는 DataManager.SetLightLevel 내부 로그로 대체 가능
+            }
+
+            break;
+            
+        }
+        case BluetoothMessageId::SN1_PWM_VALUE:
+        {
+            if (message.node_id == Node::SN1)
+            {
+                uint8_t pwm_value_from_sn1 = message.data_payload.byte_data;
+                PowerEstimator::processSn1PwmValue(pwm_value_from_sn1); // PowerEstimator로 PWM 값 전달
+            }
             break;
         }
         case BluetoothMessageId::CALL_BTN:

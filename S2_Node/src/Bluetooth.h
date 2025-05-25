@@ -22,4 +22,5 @@ namespace Bluetooth
     void SendSoundEvent(const bool value);
     void SetPairingPasskey(const uint8_t* passkey);
     void PairingHandler(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context);
+    void SendDutyCycle(const uint8_t value);
 }

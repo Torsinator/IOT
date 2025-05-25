@@ -29,7 +29,7 @@ uint8_t DataManager::GetLightLevel()
     return sn1_data.light_level;
 }
 
-uint16_t DataManager::GetPowerSN1()
+double DataManager::GetPowerSN1()
 {
     MutexLockGuard lock(&data_mutex);
     return sn1_data.power;
@@ -66,7 +66,7 @@ uint16_t DataManager::GetFanSpeed()
     return sn2_data.fan_speed;
 }
 
-uint16_t DataManager::GetPowerSN2()
+double DataManager::GetPowerSN2()
 {
     MutexLockGuard lock(&data_mutex);
     return sn2_data.power;
@@ -92,7 +92,7 @@ void DataManager::SetLightLevel(uint8_t value)
     sn1_data.light_level = value;
 }
 
-void DataManager::SetPowerSN1(uint16_t value)
+void DataManager::SetPowerSN1(double value)
 {
     MutexLockGuard lock(&data_mutex);
     sn1_data.power = value;
@@ -129,7 +129,7 @@ void DataManager::SetFanSpeed(uint16_t value)
     sn2_data.fan_speed = value;
 }
 
-void DataManager::SetPowerSN2(uint16_t value)
+void DataManager::SetPowerSN2(double value)
 {
     MutexLockGuard lock(&data_mutex);
     sn2_data.power = value;

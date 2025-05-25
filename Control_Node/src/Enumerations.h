@@ -10,7 +10,9 @@ enum class BluetoothMessageId
     CONNECT,
     DISCONNECT,
     FAN_DUTY,
-    SECURITY
+    SECURITY,
+    SN1_PWM_VALUE,   
+    SN2_PWM_VALUE
 };
 
 enum class Node

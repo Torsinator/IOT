@@ -30,7 +30,7 @@ typedef struct
     bool connected;
     bool call_button_activated;
     uint8_t light_level;
-    uint16_t power;
+    double power;
 } SensorNode1Data;
 
 typedef struct
@@ -40,7 +40,7 @@ typedef struct
     bool sound_detected;
     double temperature_level;
     uint16_t fan_speed;
-    uint16_t power;
+    double power;
 } SensorNode2Data;
 
 typedef struct
