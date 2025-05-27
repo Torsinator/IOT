@@ -1,6 +1,6 @@
 #pragma once
 
-enum BluetoothMessageId
+enum class BluetoothMessageId
 {
     TEMPERATURE,
     SOUND_CHANGE,
@@ -9,18 +9,19 @@ enum BluetoothMessageId
     POWER,
     CONNECT,
     DISCONNECT,
-    FAN_DUTY
+    FAN_DUTY,
+    SECURITY
 };
 
-enum Node
+enum class Node
 {
     CONTROL,
     SN1,
     SN2
 };
 
-// Enum for LED state
-enum LED_STATE
+// enum class for LED state
+enum class LED_STATE
 {
     INIT,
     OFF,
@@ -30,7 +31,7 @@ enum LED_STATE
     RED_SOLID
 };
 
-enum LCD_Message
+enum class LCD_Message
 {
     NEW_SCREEN,
     REFRESH

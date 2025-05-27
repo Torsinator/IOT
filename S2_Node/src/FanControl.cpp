@@ -80,7 +80,7 @@ namespace Fan
             // When getting RPM
             if (fan_timer_complete)
             {
-                Log.trace("Duty: %.2f", duty_cycle * 100);
+                Log.info("Duty: %.2f", duty_cycle * 100);
                 Log.info("Fan RPM: %d", fan_rpm);
                 fan_timer_complete = false;
             }

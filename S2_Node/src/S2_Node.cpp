@@ -14,6 +14,8 @@
 #include "SoundLED.h"
 #include "Structs.h"
 #include "Bluetooth.h"
+#include "SevenSeg.h"
+#include "Security.h"
 
 // Let Device OS manage the connection to the Particle Cloud
 SYSTEM_MODE(MANUAL);
@@ -22,10 +24,12 @@ SYSTEM_MODE(MANUAL);
 SYSTEM_THREAD(ENABLED);
 
 // Show system, cloud connectivity, and application logs over USB
-// View logs with CLI using 'particle serial monitor --follow'
+// View logs with CLI using 'particle serial monitor --folOUTPUT'
 SerialLogHandler logHandler(LOG_LEVEL_INFO);
 
 os_queue_t main_queue;
+
+os_queue_t pairing_queue;
 
 uint8_t value = 0;
 
@@ -47,10 +51,22 @@ void setup()
     pinMode(SOUND_LED_GREEN, OUTPUT);
     pinMode(SOUND_LED_RED, OUTPUT);
     pinMode(TEMP_SENS, INPUT);
+    pinMode(PIN_BTN, INPUT_PULLUP);
+    pinMode(DJ_KNOB, INPUT);
+    pinMode(SSEG_A, OUTPUT);
+    pinMode(SSEG_B, OUTPUT);
+    pinMode(SSEG_C, OUTPUT);
+    pinMode(SSEG_D, OUTPUT);
+    pinMode(SSEG_E, OUTPUT);
+    pinMode(SSEG_F, OUTPUT);
+    pinMode(SSEG_G, OUTPUT);
+    pinMode(SSEG_DOT, OUTPUT);
 
     os_queue_create(&main_queue, 10, sizeof(BluetoothMessage), nullptr);
+    os_queue_create(&pairing_queue, sizeof(PairingStatus), 2, nullptr);
 
     // Call setup function from each namespace
+    Security::Setup();
     Emergency::Setup();
     SoundSensor::Setup();
     Fan::Setup();
@@ -83,10 +99,10 @@ void loop()
     BluetoothMessage message;
     if (os_queue_take(main_queue, &message, CONCURRENT_WAIT_FOREVER, nullptr) == 0)
     {
-        Log.info("Got queue item: %d", message.message_type);
+        Log.info("Got queue item: %d", (uint8_t) message.message_type);
         switch (message.message_type)
         {
-        case CONNECT:
+        case BluetoothMessageId::CONNECT:
         {
             Log.info("In Connect");
             CALL_LED.bluetooth_connection = true;
@@ -94,34 +110,41 @@ void loop()
             CALL_LED.update_LED();
             break;
         }
-        case DISCONNECT:
+        case BluetoothMessageId::DISCONNECT:
         {
             Log.info("In Disconnect");
+            Security::SetPairing(false);
             CALL_LED.bluetooth_connection = false;
             CALL_LED.get_next_state();
             CALL_LED.update_LED();
             break;
         }
-        case LIGHT:
+        case BluetoothMessageId::LIGHT:
         {
             Log.info("Got Light Message");
-            bool* light_status = (bool *) message.data;
+            bool *light_status = (bool *)message.data;
             sound_LED.lights_on = *light_status;
             sound_LED.get_next_state();
             sound_LED.update_LED();
             break;
         }
-        case CALL_BTN:
+        case BluetoothMessageId::CALL_BTN:
         {
             Log.info("Got Call Message");
             break;
         }
-        case FAN_DUTY:
+        case BluetoothMessageId::FAN_DUTY:
         {
             Log.info("Got Fan Duty Message");
             FanDutyCycleMessage *duty_message = (FanDutyCycleMessage *)message.data;
             Fan::SetDutyCycle(duty_message->duty_cycle);
             Fan::SetOverrideStatus(duty_message->controlled);
+            break;
+        }
+        case BluetoothMessageId::PAIRING:
+        {
+            PairingStatus status = PairingStatus::PAIRING;
+            os_queue_put(pairing_queue, &status, 0, nullptr);
             break;
         }
         default:

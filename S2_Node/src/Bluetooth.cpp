@@ -24,25 +24,18 @@ namespace Bluetooth
         SN2_SERVICE_UUID        // Service UUID as BleUuid
     );
 
-    BleCharacteristic power_characteristic(
-        "power_characteristic",
-        BleCharacteristicProperty::READ | BleCharacteristicProperty::NOTIFY,
-        SN2_TEMP_SENS_CHAR_UUID, // Characteristic UUID as BleUuid
-        SN2_SERVICE_UUID         // Service UUID as BleUuid
-    );
-
     BleCharacteristic sound_characteristic(
         "sound_characteristic",
         BleCharacteristicProperty::READ | BleCharacteristicProperty::INDICATE,
-        SN2_TEMP_SENS_CHAR_UUID, // Characteristic UUID as BleUuid
-        SN2_SERVICE_UUID         // Service UUID as BleUuid
+        SN2_SOUND_UUID,  // Characteristic UUID as BleUuid
+        SN2_SERVICE_UUID // Service UUID as BleUuid
     );
 
     BleCharacteristic fan_duty_characteristic(
         "fan_duty_cycle_override",
-        BleCharacteristicProperty::WRITE,
-        CN_FAN_DUTY_CHAR_UUID, // Characteristic UUID as BleUuid
-        SN2_SERVICE_UUID       // Service UUID as BleUuid
+        BleCharacteristicProperty::READ | BleCharacteristicProperty::WRITE,
+        SN2_FAN_DUTY_CHAR_UUID, // Characteristic UUID as BleUuid
+        SN2_SERVICE_UUID        // Service UUID as BleUuid
     );
 
     BleCharacteristic light_on_off_characteristic(
@@ -50,6 +43,13 @@ namespace Bluetooth
         BleCharacteristicProperty::WRITE,
         CN_LIGHT_ON_OFF_UUID, // Characteristic UUID as BleUuid
         SN2_SERVICE_UUID      // Service UUID as BleUuid
+    );
+
+    BleCharacteristic security_characterisic(
+        "security_pin",
+        BleCharacteristicProperty::READ | BleCharacteristicProperty::WRITE | BleCharacteristicProperty::NOTIFY,
+        CN_SECURITY_UUID, // Characteristic UUID as BleUuid
+        SN2_SERVICE_UUID  // Service UUID as BleUuid
     );
 
     // BleCharacteristic fan_duty_characteristic;
@@ -70,6 +70,11 @@ namespace Bluetooth
         // Add characteristic handlers (for fan duty and call for help ack)
         fan_duty_characteristic.onDataReceived(DutyCycleHandler);
 
+        BLE.setPairingIoCaps(BlePairingIoCaps::NONE);
+        BLE.setPairingAlgorithm(BlePairingAlgorithm::LESC_ONLY);
+
+        BLE.onPairingEvent(onPairingEvent);
+
         os_queue_create(&connection_queue, sizeof(bool), 1, nullptr);
 
         // Add the sensor service and attach both characteristics.
@@ -78,8 +83,10 @@ namespace Bluetooth
         BLE.addCharacteristic(sound_characteristic);
         BLE.addCharacteristic(fan_duty_characteristic);
         BLE.addCharacteristic(light_on_off_characteristic);
+        BLE.addCharacteristic(security_characterisic);
 
         light_on_off_characteristic.onDataReceived(LightOnOffHandler);
+        security_characterisic.onDataReceived(PairingHandler);
 
         BLE.onConnected(onConnectHandler);
         BLE.onDisconnected(onDisconnectHandler);
@@ -129,31 +136,14 @@ namespace Bluetooth
         }
     }
 
-    // bool Connect(BluetoothConnection &connection)
-    // {
-    //     BleScanResult scan_results[SCAN_RESULT_MAX];
-    //     for (auto &result : BLE.scan())
-    //     {
-    //         Log.info("looking at result");
-    //         for (auto &service : result.advertisingData().serviceUUID())
-    //         {
-    //             Log.info("Service UUID: %s", service.toString().c_str());
-    //             if (service == connection.service_uuid)
-    //             {
-    //                 connection.device = BLE.connect(result.address());
-    //                 connection.is_connected = true;
-    //                 if (connection.device.getCharacteristicByUUID(fan_duty_characteristic, BleUuid(CN_FAN_DUTY_CHAR_UUID)))
-    //                 {
-    //                     Serial.println("Found fan duty characteristic");
-    //                 }
-
-    //                 Log.info("Successfully connected to device: %s", connection.service_uuid.toString().c_str());
-    //                 return true;
-    //             }
-    //         }
-    //     }
-    //     return false;
-    // }
+    void SetPairingPasskey(const uint8_t *passkey)
+    {
+        if (control_node_connection.device.isValid())
+        {
+            Log.info("Setting passkey %s", passkey);
+            security_characterisic.setValue(passkey, 6);
+        }
+    }
 
     bool Disconnect(BluetoothConnection &connection)
     {
@@ -164,15 +154,41 @@ namespace Bluetooth
 
     void onConnectHandler(const BlePeerDevice &peer)
     {
-        control_node_connection.is_connected = true;
         control_node_connection.device = peer;
-        BluetoothMessage connect{Node::SN2, BluetoothMessageId::CONNECT, nullptr};
-        os_queue_put(main_queue, &connect, 0, nullptr);
+        BluetoothMessage message{Node::SN2, BluetoothMessageId::PAIRING, NULL};
+        os_queue_put(main_queue, &message, 0, nullptr);
     }
 
     void onDisconnectHandler(const BlePeerDevice &peer)
     {
-        os_queue_put(connection_queue, (void *)control_node_connection.is_connected, 0, nullptr);
+        os_queue_put(connection_queue, &control_node_connection.is_connected, 0, nullptr);
+    }
+
+    void onPairingEvent(const BlePairingEvent &event, void *context)
+    {
+        if (event.type == BlePairingEventType::REQUEST_RECEIVED)
+        {
+            Log.info("onPairingEvent REQUEST_RECEIVED");
+        }
+        else if (event.type == BlePairingEventType::PASSKEY_DISPLAY)
+        {
+            char passKeyStr[BLE_PAIRING_PASSKEY_LEN + 1];
+            memcpy(passKeyStr, event.payload.passkey, BLE_PAIRING_PASSKEY_LEN);
+            passKeyStr[BLE_PAIRING_PASSKEY_LEN] = 0;
+
+            Log.info("onPairingEvent PASSKEY_DISPLAY %s", passKeyStr);
+        }
+        else if (event.type == BlePairingEventType::STATUS_UPDATED)
+        {
+            Log.info("onPairingEvent STATUS_UPDATED status=%d lesc=%d bonded=%d",
+                     event.payload.status.status,
+                     (int)event.payload.status.lesc,
+                     (int)event.payload.status.bonded);
+        }
+        else if (event.type == BlePairingEventType::NUMERIC_COMPARISON)
+        {
+            Log.info("onPairingEvent NUMERIC_COMPARISON");
+        }
     }
 
     void SendTemperature(const uint16_t temperature)
@@ -201,6 +217,20 @@ namespace Bluetooth
     {
         BluetoothMessage message{Node::SN2, BluetoothMessageId::LIGHT, data};
         os_queue_put(main_queue, &message, 0, nullptr);
+    }
+
+    void PairingHandler(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context)
+    {
+        if ((bool)*data == true)
+        {
+            control_node_connection.is_connected = true;
+            BluetoothMessage connect{Node::SN2, BluetoothMessageId::CONNECT, nullptr};
+            os_queue_put(main_queue, &connect, 0, nullptr);
+        }
+        else
+        {
+            Log.info("Incorrect Password");
+        }
     }
 
 } // namespace Bluetooth

@@ -2,8 +2,8 @@
 
 #include "Particle.h"
 
-#define LED_1_RED D0
-#define LED_1_GREEN D1
+#define LED_1_RED D8
+#define LED_1_GREEN D9
 #define LED_2_RED D2
 #define LED_2_GREEN D3
 #define LED_3_RED D4
@@ -18,6 +18,7 @@ const char SN2_SOUND_UUID[] = "ea10003-eeb4-43c3-afef-6423cce071ae";
 const char CN_SERVICE_UUID[] = "ea20000-eeb4-43c3-afef-6423cce071ae";
 const char CN_FAN_DUTY_CHAR_UUID[] = "ea20001-eeb4-43c3-afef-6423cce071ae";
 const char CN_LIGHT_INDICATOR_UUID[] = "ea20002-eeb4-43c3-afef-6423cce071ae";
+const char CN_SECURITY_UUID[] = "ea20003-eeb4-43c3-afef-6423cce071ae";
 
 const char SN1_SERVICE_UUID[] = "ea30000-eeb4-43c3-afef-6423cce071ae";
 const char SN1_LUX_CHAR_UUID[] = "ea30001-eeb4-43c3-afef-6423cce071ae";

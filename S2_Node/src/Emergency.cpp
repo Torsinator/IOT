@@ -36,7 +36,8 @@ namespace Emergency
     void ButtonCallback(void)
     {
         // Add the button press to the queue
-        os_queue_put(button_queue, (void *)true, 0, nullptr);
+        bool value = true;
+        os_queue_put(button_queue, &value, 0, nullptr);
     }
 
     // Debounce callback

@@ -19,6 +19,7 @@ namespace Bluetooth
     BleCharacteristic temperature_measurement_characteristic;
     BleCharacteristic sound_characteristic;
     BleCharacteristic light_on_off_characteristic;
+    BleCharacteristic security_characteristic;
 
     BleCharacteristic lux_characteristic_sn1; // <--- SN1 lux characteristic
 
@@ -29,8 +30,6 @@ namespace Bluetooth
     //     CN_FAN_DUTY_CHAR_UUID, // Characteristic UUID as BleUuid
     //     CN_SERVICE_UUID        // Service UUID as BleUuid
     // );
-
-    bool updateDisplay = false;
 
     void Setup()
     {
@@ -47,9 +46,13 @@ namespace Bluetooth
         call_button_characteristic_sn2.onDataReceived(CallButtonSN2, NULL);
         sound_characteristic.onDataReceived(SoundHandler, NULL);
         temperature_measurement_characteristic.onDataReceived(TemperatureHandler, NULL);
+        security_characteristic.onDataReceived(SecurityHandler, NULL);
 
         lux_characteristic_sn1.onDataReceived(LuxHandlerSN1, NULL); // <--- SN1 lux callback
 
+        BLE.setPairingIoCaps(BlePairingIoCaps::NONE);
+        BLE.setPairingAlgorithm(BlePairingAlgorithm::LESC_ONLY);
+        BLE.onPairingEvent(onPairingEvent);
         BLE.onDisconnected(onDisconnectHandler);
 
         // Set UUIDs and values for the sensor nodes
@@ -90,7 +93,7 @@ namespace Bluetooth
             {
                 if (queue_value)
                 {
-                    BluetoothMessage disconnect{Node::SN2, BluetoothMessageId::DISCONNECT, nullptr};
+                    BluetoothMessage disconnect{Node::SN2, BluetoothMessageId::DISCONNECT, (uint8_t *)&queue_value};
                     os_queue_put(control_queue, &disconnect, 0, nullptr);
                     Log.info("Advertising");
                     Advertise();
@@ -100,7 +103,7 @@ namespace Bluetooth
                         if (Connect(sensor_node_2))
                         {
                             Log.info("Successfully connected to sensor node 2");
-                            BluetoothMessage connect{Node::SN2, BluetoothMessageId::CONNECT, nullptr};
+                            BluetoothMessage connect{Node::SN2, BluetoothMessageId::CONNECT, NULL};
                             os_queue_put(control_queue, &connect, 0, nullptr);
                             break;
                         }
@@ -129,7 +132,7 @@ namespace Bluetooth
                         if (Connect(sensor_node_1))
                         {
                             Log.info("Successfully connected to sensor node 1");
-                            BluetoothMessage connect{Node::SN1, BluetoothMessageId::CONNECT, nullptr};
+                            BluetoothMessage connect{Node::SN1, BluetoothMessageId::CONNECT, NULL};
                             os_queue_put(control_queue, &connect, 0, nullptr);
                             break;
                         }
@@ -155,17 +158,18 @@ namespace Bluetooth
                     connection.is_connected = true;
 
                     auto char_uuids = connection.device.discoverAllCharacteristics();
-                    Log.info("Connections %d", char_uuids.size());
-                    for (auto &i : char_uuids)
-                    {
-                        Log.info(i.UUID().toString());
-                    }
+                    // Log.info("Connections %d", char_uuids.size());
+                    // for (auto &i : char_uuids)
+                    // {
+                    //     Log.info(i.UUID().toString());
+                    // }
                     // if (connection.device.getCharacteristicByUUID(call_button_characteristic_sn1, BleUuid(SN1_CALL_BTN_CHAR_UUID)))
                     // {
                     //     Serial.println("Found call button characteristic");
                     // }
-                    if (connection.service_uuid.toString() == SN2_SERVICE_UUID)
+                    if (connection.service_uuid == BleUuid(SN2_SERVICE_UUID))
                     {
+                        Serial.println("YEP node found");
                         if (connection.device.getCharacteristicByUUID(temperature_measurement_characteristic, BleUuid(SN2_TEMP_SENS_CHAR_UUID)))
                         {
                             Serial.println("Found temperature characteristic");
@@ -176,11 +180,19 @@ namespace Bluetooth
                         }
                         if (connection.device.getCharacteristicByUUID(light_on_off_characteristic, BleUuid(CN_LIGHT_INDICATOR_UUID)))
                         {
-                            Serial.println("Found SN2 call button characteristic");
+                            Serial.println("Found SN2 security characteristic");
+                        }
+                        if (connection.device.getCharacteristicByUUID(security_characteristic, BleUuid(CN_SECURITY_UUID)))
+                        {
+                            Serial.println("Found SN2 security characteristic");
+                        }
+                        if (connection.device.getCharacteristicByUUID(sound_characteristic, BleUuid(SN2_SOUND_UUID)))
+                        {
+                            Serial.println("Found SN2 sound characteristic");
                         }
                         else
                         {
-                            Serial.println("Failed to find characteristic");
+                            Serial.println("TORS Failed to find characteristic");
                             // BLE.disconnect(connection.device);
                             return false;
                         }
@@ -207,6 +219,7 @@ namespace Bluetooth
                         //    Serial.println("Found SN1 call button characteristic");
                         // }
                     }
+                    BLE.startPairing(connection.device);
                     Log.info("Successfully connected to device: %s", connection.service_uuid.toString().c_str());
                     return true;
                 }
@@ -215,10 +228,54 @@ namespace Bluetooth
         return false;
     }
 
-    bool Disconnect(BluetoothConnection &connection)
+    void onPairingEvent(const BlePairingEvent &event, void *context)
+    {
+        if (event.type == BlePairingEventType::REQUEST_RECEIVED)
+        {
+            Log.info("onPairingEvent REQUEST_RECEIVED");
+        }
+        else if (event.type == BlePairingEventType::PASSKEY_DISPLAY)
+        {
+            char passKeyStr[BLE_PAIRING_PASSKEY_LEN + 1];
+            memcpy(passKeyStr, event.payload.passkey, BLE_PAIRING_PASSKEY_LEN);
+            passKeyStr[BLE_PAIRING_PASSKEY_LEN] = 0;
+
+            Log.info("onPairingEvent PASSKEY_DISPLAY %s", passKeyStr);
+        }
+        else if (event.type == BlePairingEventType::STATUS_UPDATED)
+        {
+            Log.info("onPairingEvent STATUS_UPDATED status=%d lesc=%d bonded=%d",
+                     event.payload.status.status,
+                     (int)event.payload.status.lesc,
+                     (int)event.payload.status.bonded);
+        }
+        else if (event.type == BlePairingEventType::NUMERIC_COMPARISON)
+        {
+            Log.info("onPairingEvent NUMERIC_COMPARISON");
+        }
+        if (event.type == BlePairingEventType::PASSKEY_INPUT)
+        {
+            Log.info("Passkey input: Sent 123456");
+            BLE.setPairingPasskey(event.peer, (const uint8_t *)"123456");
+        }
+    }
+
+    bool Disconnect(const Node &node)
     {
         Log.info("Disconnecting from node");
-        return true;
+        if (node == Node::SN1)
+        {
+            sensor_node_1.device.disconnect();
+            return true;
+        }
+        else if (node == Node::SN2)
+        {
+            sensor_node_2.device.disconnect();
+            bool val = true;
+            os_queue_put(sn2_disconnect_queue, &val, 0, nullptr);
+            return true;
+        }
+        return false;
     }
 
     void onDisconnectHandler(const BlePeerDevice &peer)
@@ -227,13 +284,15 @@ namespace Bluetooth
         {
             Log.error("Bluetooth connection to sensor node 1 lost");
             sensor_node_1.is_connected = false;
-            os_queue_put(sn1_disconnect_queue, (void *)sensor_node_1.is_connected, 0, nullptr);
+            bool val = true;
+            os_queue_put(sn1_disconnect_queue, &val, 0, nullptr);
         }
         else if (peer == sensor_node_2.device)
         {
             Log.error("Bluetooth connection to sensor node 2 lost");
             sensor_node_2.is_connected = false;
-            os_queue_put(sn2_disconnect_queue, (void *)sensor_node_2.is_connected, 0, nullptr);
+            bool val = true;
+            os_queue_put(sn2_disconnect_queue, &val, 0, nullptr);
         }
         else
         {
@@ -278,19 +337,32 @@ namespace Bluetooth
         //     return;
         // }
         Log.info("Call button SN2");
-        BluetoothMessage message{Node::SN2, BluetoothMessageId::CALL_BTN, data};
+        BluetoothMessage message{Node::SN2, BluetoothMessageId::CALL_BTN};
+        message.data_payload.bool_data = *(bool *)data;
         os_queue_put(control_queue, &message, 0, NULL);
     }
 
     void SoundHandler(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context)
     {
-        BluetoothMessage message{Node::SN2, BluetoothMessageId::SOUND_CHANGE, data};
+        Log.info("Sounds sensor");
+        BluetoothMessage message{Node::SN2, BluetoothMessageId::SOUND_CHANGE};
+        message.data_payload.bool_data = *(bool *)data;
         os_queue_put(control_queue, &message, 0, nullptr);
     }
 
     void TemperatureHandler(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context)
     {
-        BluetoothMessage message{Node::SN2, BluetoothMessageId::TEMPERATURE, data};
+        Log.info("Temperature %d", *(uint16_t *)data);
+        BluetoothMessage message{Node::SN2, BluetoothMessageId::TEMPERATURE};
+        message.data_payload.word_data = *(uint16_t *)data;
+        os_queue_put(control_queue, &message, 0, nullptr);
+    }
+
+    void SecurityHandler(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context)
+    {
+        Log.info("Security pin receieved %s", data);
+        BluetoothMessage message{Node::SN2, BluetoothMessageId::SECURITY};
+        memcpy(message.data_payload.string_data, data, 6);
         os_queue_put(control_queue, &message, 0, nullptr);
     }
 
@@ -314,5 +386,11 @@ namespace Bluetooth
             message.data_payload.byte_data = received_lux_value;
             os_queue_put(control_queue, &message, 0, nullptr);
         }
+    }
+
+    void SetPairingSuccess(bool success)
+    {
+        Log.info("Set Pairing Success");
+        security_characteristic.setValue(success);
     }
 } // namespace Bluetooth

@@ -30,21 +30,26 @@ void setup()
 {
     pinMode(LED_2_GREEN, OUTPUT);
     pinMode(LED_2_RED, OUTPUT);
+    pinMode(LED_3_GREEN, OUTPUT);
+    pinMode(LED_3_RED, OUTPUT);
     os_queue_create(&control_queue, sizeof(BluetoothMessage), 10, nullptr);
     os_queue_create(&lcd_message_queue, sizeof(LCD_Message), 10, nullptr);
     LCD::Setup();
     Bluetooth::Setup();
+    led_1.update_LED(LED_STATE::OFF);
+    led_2.update_LED(LED_STATE::OFF);
+    led_3.update_LED(LED_STATE::OFF);
 }
 
 void loop()
 {
     BluetoothMessage message;
-    if (os_queue_take(control_queue, &message, CONCURRENT_WAIT_FOREVER, nullptr) == 0) // Tae modify
+    if (os_queue_take(control_queue, &message, CONCURRENT_WAIT_FOREVER, nullptr) == 0)
     {
-        Log.info("Got queue item: %d", message.message_type);
+        Log.info("Got queue item: %d", (int)message.message_type);
         switch (message.message_type)
         {
-        case CONNECT:
+        case BluetoothMessageId::CONNECT:
         {
             Log.info("In Connect");
             if (message.node_id == Node::SN1)
@@ -54,16 +59,14 @@ void loop()
             else if (message.node_id == Node::SN2)
             {
                 Log.info("In SN2");
-                data_manager.SetConnectedSN2(true);
-                led_2.update_LED(LED_STATE::GREEN_SOLID);
                 Log.info("Done");
             }
             break;
         }
-        case DISCONNECT:
+        case BluetoothMessageId::DISCONNECT:
         {
             Log.info("In Disconnect");
-            Log.info("Node: %d", message.node_id);
+            Log.info("Node: %d", (int)message.node_id);
             if (message.node_id == Node::SN1)
             {
                 data_manager.SetConnectedSN1(false);
@@ -75,27 +78,19 @@ void loop()
             }
             break;
         }
-        case TEMPERATURE:
+        case BluetoothMessageId::TEMPERATURE:
         {
             /* code */
-            data_manager.SetTemperatureLevel((*(uint16_t *)message.data_payload.data) / 100.0);
+            data_manager.SetTemperatureLevel(message.data_payload.word_data / 100.0);
             Log.info("Got Temperature: %.2f", data_manager.GetTemperatureLevel());
             break;
         }
-        case LIGHT:
+        case BluetoothMessageId::LIGHT:
         {
-            if (message.node_id == Node::SN1) // message.data 포인터는 이제 사용하지 않음
-            {
-                uint8_t lux_value_from_sn1 = message.data_payload.byte_data;
-                Log.info("CtrlNode - Value in case LIGHT from message.value_data: %u", lux_value_from_sn1);
-
-                data_manager.SetLightLevel((double)lux_value_from_sn1);
-                // Log.info("SN1 Lux updated in DataManager: %u", lux_value_from_sn1); // 이 로그는 DataManager.SetLightLevel 내부 로그로 대체 가능
-            }
 
             break;
         }
-        case CALL_BTN:
+        case BluetoothMessageId::CALL_BTN:
         {
             if (message.node_id == Node::SN1)
             {
@@ -103,7 +98,7 @@ void loop()
             }
             else if (message.node_id == Node::SN2)
             {
-                if ((bool)*message.data_payload.data)
+                if (message.data_payload.bool_data)
                 {
                     data_manager.SetCallButtonActivatedSN2(true);
                     led_2.update_LED(LED_STATE::RED_FLASHING);
@@ -116,13 +111,52 @@ void loop()
             }
             break;
         }
-        case SOUND_CHANGE:
+        case BluetoothMessageId::SOUND_CHANGE:
         {
-            data_manager.SetSoundDetected((bool)*message.data_payload.data);
+            Log.info("Sound Change");
+            bool value = message.data_payload.bool_data;
+            data_manager.SetSoundDetected(value);
+            if (value)
+            {
+                // Check If lights are on
+                led_3.update_LED(LED_STATE::GREEN_SOLID);
+            }
+            else
+            {
+                //
+                led_3.update_LED(LED_STATE::OFF);
+            }
             break;
         }
-        case POWER:
+        case BluetoothMessageId::POWER:
             break;
+        case BluetoothMessageId::SECURITY:
+        {
+            Log.info("In security");
+            if (message.node_id == Node::SN1)
+            {
+                data_manager.SetConnectedSN1(false);
+            }
+            else if (message.node_id == Node::SN2)
+            {
+                uint8_t *entered_password = message.data_payload.string_data;
+                Log.info("Entered Password %s", entered_password);
+                if (strncmp((char *)entered_password, "0123456", 6) == 0)
+                {
+                    Log.info("Correct Pin");
+                    // Compare passwords
+                    Bluetooth::SetPairingSuccess(true);
+                    data_manager.SetConnectedSN2(true);
+                    led_2.update_LED(LED_STATE::GREEN_SOLID);
+                }
+                else
+                {
+                    Log.info("Incorrect Pin, disconnecting");
+                    Bluetooth::Disconnect(Node::SN2);
+                }
+            }
+            break;
+        }
         default:
             break;
         }
