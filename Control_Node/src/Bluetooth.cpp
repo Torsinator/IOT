@@ -21,7 +21,8 @@ namespace Bluetooth
     BleCharacteristic light_on_off_characteristic;
     BleCharacteristic security_characteristic;
 
-    BleCharacteristic lux_characteristic_sn1; // <--- SN1 lux characteristic
+    BleCharacteristic lux_characteristic_sn1;                       // <--- SN1 lux characteristic
+    BleCharacteristic potentiometer_led_control_characteristic_sn1; // <--- SN1 PWM characteristic
 
     // Fan duty cycle updates
     BleCharacteristic fan_duty_cycle_characteristic;
@@ -48,7 +49,10 @@ namespace Bluetooth
         temperature_measurement_characteristic.onDataReceived(TemperatureHandler, NULL);
         security_characteristic.onDataReceived(SecurityHandler, NULL);
 
-        lux_characteristic_sn1.onDataReceived(LuxHandlerSN1, NULL); // <--- SN1 lux callback
+        lux_characteristic_sn1.onDataReceived(LuxHandlerSN1, NULL);                                           // <--- SN1 lux callback
+        potentiometer_led_control_characteristic_sn1.onDataReceived(PotentiometerLedControlHandlerSN1, NULL); // <--- SN1 PWM callback
+
+        fan_duty_cycle_characteristic.onDataReceived(PotHandlerSN2, NULL); // <--- SN1 lux callback
 
         BLE.setPairingIoCaps(BlePairingIoCaps::NONE);
         BLE.setPairingAlgorithm(BlePairingAlgorithm::LESC_ONLY);
@@ -190,6 +194,10 @@ namespace Bluetooth
                         {
                             Serial.println("Found SN2 sound characteristic");
                         }
+                        if (connection.device.getCharacteristicByUUID(fan_duty_cycle_characteristic, BleUuid(CN_FAN_DUTY_CHAR_UUID)))
+                        {
+                            Serial.println("Found SN2 potentiometer characteristic");
+                        }
                         else
                         {
                             Serial.println("TORS Failed to find characteristic");
@@ -214,10 +222,29 @@ namespace Bluetooth
                             // connection.is_connected = false;
                             // return false;
                         }
+                        if (connection.device.getCharacteristicByUUID(call_button_characteristic_sn1, BleUuid(SN1_CALL_BTN_CHAR_UUID)))
+                        {
+                            Serial.println("Found SN1 call button characteristic");
+                        }
+                        else
+                        {
+                            Serial.println("ERROR: SN1 Lux characteristic NOT FOUND");
+                            // connection.device.disconnect(); // 필요시 연결 해제
+                            // connection.is_connected = false;
+                            // return false;
+                        }
                         // SN1에 버튼 기능이 있다면 여기서 추가
                         // if (connection.device.getCharacteristicByUUID(call_button_characteristic_sn1, BleUuid(SN1_CALL_BTN_CHAR_UUID))) {
                         //    Serial.println("Found SN1 call button characteristic");
                         // }
+                        if (connection.device.getCharacteristicByUUID(potentiometer_led_control_characteristic_sn1, BleUuid(SN1_POT_CHAR_UUID)))
+                        {
+                            Serial.println("Found SN1 Potentiometer/LED Control characteristic");
+                        }
+                        else
+                        {
+                            Serial.println("ERROR: SN1 Potentiometer/LED Control characteristic NOT FOUND");
+                        }
                     }
                     BLE.startPairing(connection.device);
                     Log.info("Successfully connected to device: %s", connection.service_uuid.toString().c_str());
@@ -302,21 +329,18 @@ namespace Bluetooth
 
     void CallButtonSN1(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context)
     {
-        // Node node_id;
-        // if (peer == sensor_node_1.device)
-        // {
-        //     node_id = SN1;
-        // }
-        // else if (peer == sensor_node_2.device)
-        // {
-        //     node_id = SN2;
-        // }
-        // else
-        // {
-        //     Log.error("Invalid peer in call button callback");
-        //     return;
-        // }
-        BluetoothMessage message{Node::SN1, BluetoothMessageId::CALL_BTN, data};
+        Log.info("Got call button stuff");
+        bool value;
+        if (*data == 0)
+        {
+            value = false;
+        }
+        else
+        {
+            value = true;
+        }
+        BluetoothMessage message{Node::SN1, BluetoothMessageId::CALL_BTN};
+        message.data_payload.bool_data = value;
         os_queue_put(control_queue, &message, 0, NULL);
     }
 
@@ -365,7 +389,21 @@ namespace Bluetooth
         memcpy(message.data_payload.string_data, data, 6);
         os_queue_put(control_queue, &message, 0, nullptr);
     }
+    // Potentiometer from SN2
+    void PotHandlerSN2(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context)
+    {
+        if (len > 0 && data != nullptr)
+        {
+            uint8_t received_pwm2_value = data[0];
+            Log.info("SN2 PWM (fan) data received via BLE: %u", received_pwm2_value);
 
+            BluetoothMessage message;
+            message.node_id = Node::SN2;
+            message.message_type = BluetoothMessageId::SN2_PWM_VALUE;
+            message.data_payload.byte_data = received_pwm2_value;
+            os_queue_put(control_queue, &message, 0, nullptr);
+        }
+    }
     void LuxHandlerSN1(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context)
     {
         if (len > 0 && data != nullptr)
@@ -392,5 +430,21 @@ namespace Bluetooth
     {
         Log.info("Set Pairing Success");
         security_characteristic.setValue(success);
+    }
+
+    // SN1의 PWM 값(g_brightness)을 수신하는 콜백 함수
+    void PotentiometerLedControlHandlerSN1(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context)
+    {
+        if (len > 0 && data != nullptr)
+        {
+            uint8_t received_pwm_value = data[0]; // SN1에서 uint8_t로 보냄
+            Log.info("SN1 PWM (g_brightness) data received via BLE: %u", received_pwm_value);
+
+            BluetoothMessage message;
+            message.node_id = Node::SN1;
+            message.message_type = BluetoothMessageId::SN1_PWM_VALUE; // 새로운 메시지 타입 정의 필요
+            message.data_payload.byte_data = received_pwm_value;
+            os_queue_put(control_queue, &message, 0, nullptr);
+        }
     }
 } // namespace Bluetooth

@@ -6,6 +6,7 @@
 #include "Particle.h"
 #include "FanControl.h"
 #include "Constants.h"
+#include "Bluetooth.h"
 
 namespace Fan
 {
@@ -17,6 +18,10 @@ namespace Fan
     std::atomic_bool overridden = false;
     double duty_cycle = 0;
     os_mutex_t fan_mtx;
+    double sum = 0;
+    uint32_t num_samples = 0;
+    Timer send_timer(10000, []
+                     {Bluetooth::SendDutyCycle(sum / num_samples * 100); sum = 0; num_samples = 0; });
 
     // Setup function called by main thread
     void Setup()
@@ -26,6 +31,7 @@ namespace Fan
         os_mutex_create(&fan_mtx);
         new Thread("Fan_Thread", RunFanThread);
         fan_speed_timer.start();
+        send_timer.start();
     }
 
     // FG pin callback
@@ -73,7 +79,8 @@ namespace Fan
             {
                 // Calculate PWM value to send by reading Pot value
                 int32_t pot_value = min(analogRead(FAN_POT), pow(2, 12) - 1);
-                SetDutyCycle(CalculateDuty(pot_value));
+                double duty = CalculateDuty(pot_value);
+                SetDutyCycle(duty);
                 Log.trace("pot %ld", pot_value);
             }
             analogWrite(FAN_OUT, round(duty_cycle * 255), PWM_FREQUENCY);
@@ -84,6 +91,8 @@ namespace Fan
                 Log.info("Fan RPM: %d", fan_rpm);
                 fan_timer_complete = false;
             }
+            sum += duty_cycle;
+            num_samples++;
             delay(100);
         }
     }

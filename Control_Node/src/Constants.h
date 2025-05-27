@@ -15,6 +15,9 @@ const char SN2_SERVICE_UUID[] = "ea10000-eeb4-43c3-afef-6423cce071ae";
 const char SN2_TEMP_SENS_CHAR_UUID[] = "ea10001-eeb4-43c3-afef-6423cce071ae";
 const char SN2_CALL_BTN_CHAR_UUID[] = "ea10002-eeb4-43c3-afef-6423cce071ae";
 const char SN2_SOUND_UUID[] = "ea10003-eeb4-43c3-afef-6423cce071ae";
+
+const char SN2_POT_CHAR_UUID[] = "ea10004-eeb4-43c3-afef-6423cce071ae";
+
 const char CN_SERVICE_UUID[] = "ea20000-eeb4-43c3-afef-6423cce071ae";
 const char CN_FAN_DUTY_CHAR_UUID[] = "ea20001-eeb4-43c3-afef-6423cce071ae";
 const char CN_LIGHT_INDICATOR_UUID[] = "ea20002-eeb4-43c3-afef-6423cce071ae";
@@ -22,6 +25,10 @@ const char CN_SECURITY_UUID[] = "ea20003-eeb4-43c3-afef-6423cce071ae";
 
 const char SN1_SERVICE_UUID[] = "ea30000-eeb4-43c3-afef-6423cce071ae";
 const char SN1_LUX_CHAR_UUID[] = "ea30001-eeb4-43c3-afef-6423cce071ae";
+
+const char SN1_POT_CHAR_UUID[] = "ea30002-eeb4-43c3-afef-6423cce071ae";
+
+const char SN1_CALL_BTN_CHAR_UUID[] = "ea30003-eeb4-43c3-afef-6423cce071ae";
 
 // bluetooth scan results
 const size_t SCAN_RESULT_MAX = 30;

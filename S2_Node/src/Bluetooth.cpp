@@ -33,7 +33,7 @@ namespace Bluetooth
 
     BleCharacteristic fan_duty_characteristic(
         "fan_duty_cycle_override",
-        BleCharacteristicProperty::READ | BleCharacteristicProperty::WRITE,
+        BleCharacteristicProperty::READ | BleCharacteristicProperty::WRITE | BleCharacteristicProperty::NOTIFY,
         SN2_FAN_DUTY_CHAR_UUID, // Characteristic UUID as BleUuid
         SN2_SERVICE_UUID        // Service UUID as BleUuid
     );
@@ -231,6 +231,12 @@ namespace Bluetooth
         {
             Log.info("Incorrect Password");
         }
+    }
+
+    void SendDutyCycle(const uint8_t value)
+    {
+        Log.info("Sending duty cycle: %d", value);
+        fan_duty_characteristic.setValue((uint8_t *)&value, sizeof(uint8_t));
     }
 
 } // namespace Bluetooth

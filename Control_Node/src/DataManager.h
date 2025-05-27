@@ -14,7 +14,7 @@ public:
     bool IsConnectedSN1();
     bool IsCallButtonActivatedSN2();
     uint8_t GetLightLevel();
-    uint16_t GetPowerSN1();
+    double GetPowerSN1();
 
     // SN2
     bool IsConnectedSN2();
@@ -22,14 +22,14 @@ public:
     bool IsSoundDetected();
     double GetTemperatureLevel();
     uint16_t GetFanSpeed();
-    uint16_t GetPowerSN2();
+    double GetPowerSN2();
 
     // Setters
     // SN1
     void SetConnectedSN1(bool value);
     void SetCallButtonActivatedSN1(bool value);
     void SetLightLevel(uint8_t value);
-    void SetPowerSN1(uint16_t value);
+    void SetPowerSN1(double value);
 
     // SN2
     void SetConnectedSN2(bool value);
@@ -37,7 +37,7 @@ public:
     void SetSoundDetected(bool value);
     void SetTemperatureLevel(double value);
     void SetFanSpeed(uint16_t value);
-    void SetPowerSN2(uint16_t value);
+    void SetPowerSN2(double value);
 
 private:
     os_mutex_t data_mutex;
