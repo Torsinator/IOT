@@ -9,7 +9,7 @@ LED::LED(uint16_t red_pin, uint16_t green_pin, uint16_t timer_flash_period_ms) :
                                                                                  green_pin(green_pin),
                                                                                  timer_flash_period_ms(timer_flash_period_ms),
                                                                                  flash_timer(timer_flash_period_ms, [this]
-                                                                                             { this->timer_callback(); }) { update_LED(OFF); }
+                                                                                             { this->timer_callback(); }) { update_LED(LED_STATE::INIT); }
 
 // Function to update the LED output
 void LED::update_LED(LED_STATE next_state)
@@ -18,7 +18,7 @@ void LED::update_LED(LED_STATE next_state)
     {
         switch (next_state)
         {
-        case OFF:
+        case LED_STATE::OFF:
         {
             flash_timer.stop();
             turn_off();
@@ -89,11 +89,11 @@ void LED::timer_callback()
     flash_on = !flash_on;
     if (flash_on)
     {
-        if (current_state == GREEN_FLASHING)
+        if (current_state == LED_STATE::GREEN_FLASHING)
         {
             solid_green();
         }
-        else if (current_state == RED_FLASHING)
+        else if (current_state == LED_STATE::RED_FLASHING)
         {
             solid_red();
         }

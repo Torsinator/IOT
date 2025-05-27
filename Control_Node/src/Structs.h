@@ -9,9 +9,12 @@ typedef struct
     BluetoothMessageId message_type;
     union
     {
+        bool bool_data;
         const uint8_t *data; // pointer data
-        uint8_t byte_data;       // 1 byte data directly stored
-        uint16_t word_data;      // 2 bytes data directly stored
+
+        uint8_t byte_data;  // 1 byte data directly stored
+        uint16_t word_data; // 2 bytes data directly stored
+        uint8_t string_data[6];
     } data_payload;
 } BluetoothMessage;
 

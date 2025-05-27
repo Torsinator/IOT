@@ -2,6 +2,7 @@
 
 #include "Particle.h"
 #include "Structs.h"
+#include "Enumerations.h"
 
 extern os_queue_t control_queue;
 
@@ -10,9 +11,11 @@ namespace Bluetooth
     // void onDataReceived(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context);
     void Setup();
     bool Connect(BluetoothConnection &connection);
+    bool Disconnect(const Node& node);
     void SensorNode1Thread();
     void SensorNode2Thread();
     void Advertise();
+    void onPairingEvent(const BlePairingEvent& event, void* context);
     void onDisconnectHandler(const BlePeerDevice &peer);
     void CallButtonSN1(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context);
     void CallButtonSN2(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context);
@@ -20,4 +23,6 @@ namespace Bluetooth
     void TemperatureHandler(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context);
     void LuxHandlerSN1(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context);
 
+    void SecurityHandler(const uint8_t* data, size_t len, const BlePeerDevice& peer, void* context);
+    void SetPairingSuccess(bool success);
 }

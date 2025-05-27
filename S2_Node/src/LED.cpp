@@ -22,7 +22,7 @@ void LED::update_LED()
     {
         switch (next_state)
         {
-        case OFF:
+        case LED_STATE::OFF:
         {
             flash_timer.stop();
             turn_off();
@@ -92,11 +92,11 @@ void LED::timer_callback()
     flash_on = !flash_on;
     if (flash_on)
     {
-        if (current_state == GREEN_FLASHING)
+        if (current_state == LED_STATE::GREEN_FLASHING)
         {
             solid_green();
         }
-        else if (current_state == RED_FLASHING)
+        else if (current_state == LED_STATE::RED_FLASHING)
         {
             solid_red();
         }

@@ -34,7 +34,7 @@ namespace SoundSensor
     void SoundCallback(void)
     {
         bool value = (digitalRead(SOUND_SENS) == 0) ? false : true;
-        os_queue_put(sound_queue, (void *) value, 0, nullptr);
+        os_queue_put(sound_queue, &value, 0, nullptr);
     }
 
     // Thread function
@@ -48,9 +48,6 @@ namespace SoundSensor
             if (os_queue_take(sound_queue, &queue_value, CONCURRENT_WAIT_FOREVER, nullptr) == 0)
             {
                 Log.trace("Got Sound: %d", queue_value);
-
-                // Send bluetooth
-                Bluetooth::SendSoundEvent(queue_value);
 
                 // update LED
                 sound_LED.sound_detected = queue_value;
