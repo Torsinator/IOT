@@ -33,7 +33,7 @@ namespace Bluetooth
 
     BleCharacteristic fan_duty_characteristic(
         "fan_duty_cycle_override",
-        BleCharacteristicProperty::READ | BleCharacteristicProperty::WRITE,
+        BleCharacteristicProperty::READ | BleCharacteristicProperty::WRITE | BleCharacteristicProperty::NOTIFY,
         SN2_FAN_DUTY_CHAR_UUID, // Characteristic UUID as BleUuid
         SN2_SERVICE_UUID        // Service UUID as BleUuid
     );

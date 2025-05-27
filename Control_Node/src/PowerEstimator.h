@@ -13,6 +13,9 @@ namespace PowerEstimator
     const float SN1_PWM_TO_CURRENT_SLOPE = 0.3074;
     const float SN1_PWM_TO_CURRENT_INTERCEPT = -0.5135;
 
+    // SN2 액추에이터(Fan) 전력 계산을 위한 상수
+    const float SN2_VOLTAGE = 3.3; // 볼트 (V) - SN1과 동일하지만 명시적으로 선언
+
     double ApplyTransferFunction(uint16_t duty);
 
     // (SN2용 상수도 필요하다면 여기에 추가)
@@ -22,7 +25,9 @@ namespace PowerEstimator
 
     void setup(DataManager &dm);                // 초기화 함수 (DataManager 참조 전달)
     void processSn1PwmValue(uint8_t pwm_value); // SN1의 PWM 값을 받아 순간 전력 계산 및 누적
-    // void processSn2PwmValue(uint8_t pwm_value); // SN2용 함수 (필요시)
+    void processSn2PwmValue(uint8_t pwm_value); // SN2의 PWM 값을 받아 순간 전력 계산 및 누적 <--- 추가
+
+
 
     void calculateAndStorePowerUsage30s(); // 30초마다 호출되어 누적 전력량 계산 및 저장
 

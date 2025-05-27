@@ -21,7 +21,7 @@ namespace Fan
     double sum = 0;
     uint32_t num_samples = 0;
     Timer send_timer(10000, []
-                     {Bluetooth::SendDutyCycle(sum / num_samples); sum = 0; num_samples = 0; });
+                     {Bluetooth::SendDutyCycle(sum / num_samples * 100); sum = 0; num_samples = 0; });
 
     // Setup function called by main thread
     void Setup()

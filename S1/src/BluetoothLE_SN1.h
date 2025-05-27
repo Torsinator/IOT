@@ -8,7 +8,8 @@ namespace BluetoothLE_SN1 {
     enum class Sn1DataType {
         CURRENT_BRIGHTNESS, // 현재 g_brightness (실시간 제어용)
         AVERAGE_BRIGHTNESS, // 30초 평균 g_brightness
-        LUX_LEVEL           // 현재 g_lux
+        LUX_LEVEL,           // 현재 g_lux
+        BUTTON_STATE        // <<< [추가] 버튼 상태
     };
 
     // 큐에 저장될 데이터 패킷 구조체

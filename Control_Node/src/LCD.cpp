@@ -145,8 +145,8 @@ namespace LCD
             // sprintf(buffer2, "P_SN2: %.1f mWh", powerSN2_mWh);
 
             // 현재 uint16_t 방식:
-            sprintf(buffer1, "P_SN1: %.2f mWh", powerSN1);
-            sprintf(buffer2, "P_SN2: %.2f mWh", powerSN2);
+            sprintf(buffer1, "P_SN1: %5.1f mWh", powerSN1);
+            sprintf(buffer2, "P_SN2: %5.1f mWh", powerSN2);
             break;
         }
         case LcdScreenType::CONNECTION_STATUS:

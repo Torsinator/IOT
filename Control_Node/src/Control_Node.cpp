@@ -26,13 +26,15 @@ LED led_3(LED_3_RED, LED_3_GREEN);
 
 // void onDataReceived(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context);
 // Tae's edit
-os_queue_t lcd_message_queue; // LCD.cpp의 선언과 동일해야 함
+os_queue_t lcd_message_queue;                                                       // LCD.cpp의 선언과 동일해야 함
 Timer powerCalculationTimer(30000, PowerEstimator::calculateAndStorePowerUsage30s); // 30초마다 호출
 
 void setup()
 {
     pinMode(LED_2_GREEN, OUTPUT);
     pinMode(LED_2_RED, OUTPUT);
+    pinMode(LED_1_GREEN, OUTPUT);
+    pinMode(LED_1_RED, OUTPUT);
     pinMode(LED_3_GREEN, OUTPUT);
     pinMode(LED_3_RED, OUTPUT);
     os_queue_create(&control_queue, sizeof(BluetoothMessage), 10, nullptr);
@@ -60,6 +62,12 @@ void loop()
             if (message.node_id == Node::SN1)
             {
                 data_manager.SetConnectedSN1(true);
+                // [추가] SN1 연결 시 CN LED1 녹색 고정
+                if (!data_manager.IsCallButtonActivatedSN1())
+                { // 호출 버튼이 활성화 상태가 아닐 때만 녹색으로 변경
+                    led_1.update_LED(LED_STATE::GREEN_SOLID);
+                    Log.info("CN: LED1 set to GREEN_SOLID (SN1 Connected)");
+                }
             }
             else if (message.node_id == Node::SN2)
             {
@@ -75,6 +83,11 @@ void loop()
             if (message.node_id == Node::SN1)
             {
                 data_manager.SetConnectedSN1(false);
+                // [추가] SN1 연결 끊김 시 CN LED1 꺼짐 (또는 다른 상태, 여기서는 OFF로 가정)
+                // 만약 호출 버튼이 활성화된 상태에서 연결이 끊겼다면, 빨간색 점멸을 유지할지 결정 필요.
+                // 여기서는 일단 호출 상태와 관계없이 연결 끊김을 우선하여 LED OFF.
+                led_1.update_LED(LED_STATE::OFF);
+                Log.info("CN: LED1 set to OFF (SN1 Disconnected)");
             }
             else if (message.node_id == Node::SN2)
             {
@@ -102,7 +115,6 @@ void loop()
             }
 
             break;
-            
         }
         case BluetoothMessageId::SN1_PWM_VALUE:
         {
@@ -113,12 +125,38 @@ void loop()
             }
             break;
         }
+        case BluetoothMessageId::SN2_PWM_VALUE: // <--- 이 케이스 추가 또는 수정
+        {
+            if (message.node_id == Node::SN2)
+            {
+                uint8_t pwm_value_from_sn2 = message.data_payload.byte_data; // 0-100 범위의 값
+                Log.info("CtrlNode - SN2_PWM_VALUE (Fan Duty %%) from SN2: %u", pwm_value_from_sn2);
+                PowerEstimator::processSn2PwmValue(pwm_value_from_sn2); // PowerEstimator로 SN2 PWM 값 전달
+
+                // 팬 속도(PWM 값)를 DataManager에도 저장 (선택 사항, LCD 표시 등에 사용 가능)
+                // DataManager의 SetFanSpeed는 uint16_t를 받으므로 캐스팅
+                data_manager.SetFanSpeed(static_cast<uint16_t>(pwm_value_from_sn2));
+                Log.info("CtrlNode - SN2 Fan Speed (PWM %%) set in DataManager: %u", pwm_value_from_sn2);
+            }
+            break;
+        }
         case BluetoothMessageId::CALL_BTN:
         {
+            Log.info("Call Button Pressed");
             if (message.node_id == Node::SN1)
             {
-                data_manager.SetCallButtonActivatedSN1(true);
+                if (message.data_payload.bool_data)
+                {
+                    data_manager.SetCallButtonActivatedSN1(true);
+                    led_1.update_LED(LED_STATE::RED_FLASHING);
+                }
+                else
+                {
+                    data_manager.SetCallButtonActivatedSN1(false);
+                    led_1.update_LED(LED_STATE::GREEN_SOLID);
+                }
             }
+
             else if (message.node_id == Node::SN2)
             {
                 if (message.data_payload.bool_data)
