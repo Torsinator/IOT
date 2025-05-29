@@ -23,6 +23,7 @@ namespace Bluetooth
 
     BleCharacteristic lux_characteristic_sn1;                       // <--- SN1 lux characteristic
     BleCharacteristic potentiometer_led_control_characteristic_sn1; // <--- SN1 PWM characteristic
+    BleCharacteristic movement_characteristic_sn1;                  // <--- SN1 lux characteristic
 
     // Fan duty cycle updates
     BleCharacteristic fan_duty_cycle_characteristic;
@@ -51,8 +52,8 @@ namespace Bluetooth
 
         lux_characteristic_sn1.onDataReceived(LuxHandlerSN1, NULL);                                           // <--- SN1 lux callback
         potentiometer_led_control_characteristic_sn1.onDataReceived(PotentiometerLedControlHandlerSN1, NULL); // <--- SN1 PWM callback
-
-        fan_duty_cycle_characteristic.onDataReceived(PotHandlerSN2, NULL); // <--- SN1 lux callback
+        movement_characteristic_sn1.onDataReceived(MoveHandlerSN1, NULL);                                     // <--- SN1 lux callback
+        fan_duty_cycle_characteristic.onDataReceived(PotHandlerSN2, NULL);                                    // <--- SN1 lux callback
 
         BLE.setPairingIoCaps(BlePairingIoCaps::NONE);
         BLE.setPairingAlgorithm(BlePairingAlgorithm::LESC_ONLY);
@@ -379,6 +380,13 @@ namespace Bluetooth
         Log.info("Temperature %d", *(uint16_t *)data);
         BluetoothMessage message{Node::SN2, BluetoothMessageId::TEMPERATURE};
         message.data_payload.word_data = *(uint16_t *)data;
+        os_queue_put(control_queue, &message, 0, nullptr);
+    }
+    void MoveHandlerSN1(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context)
+    {
+        Log.info("Motion value %d", *(uint8_t *)data);
+        BluetoothMessage message{Node::SN1, BluetoothMessageId::MOTION_DETECTED};
+        message.data_payload.word_data = *(uint8_t *)data;
         os_queue_put(control_queue, &message, 0, nullptr);
     }
 

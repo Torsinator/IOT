@@ -8,6 +8,7 @@
 #include "LCD.h"
 #include "Enumerations.h"
 #include "PowerEstimator.h"
+#include "Cloud.h" // <--- Cloud.h 포함
 
 // particle serial monitor --follow
 SYSTEM_MODE(MANUAL);
@@ -42,6 +43,14 @@ void setup()
     LCD::Setup();
     Bluetooth::Setup();
     PowerEstimator::setup(data_manager); // PowerEstimator 초기화, DataManager 인스턴스 전달
+    Cloud::setup();                      // <--- Cloud 모듈 초기화 함수 호출
+    Log.info("Attempting to connect to Particle Cloud...");
+    if (!Particle.connected())
+    { // 이미 연결되어 있지 않다면 연결 시도
+        Log.info("Attempting to connect to Particle Cloud...");
+
+        Particle.connect();
+    }
     powerCalculationTimer.start(); // 30초 타이머 시작
     led_1.update_LED(LED_STATE::OFF);
     led_2.update_LED(LED_STATE::OFF);
@@ -50,6 +59,14 @@ void setup()
 
 void loop()
 {
+    // float temperature = 23.5;
+    // int lux = 600;
+
+    // String data = String::format("{\"temperature\":%.2f,\"lux\":%d}", temperature, lux);
+    // Particle.publish("envData", data, PRIVATE);
+
+    Particle.process(); // SYSTEM_MODE(MANUAL)일 때 loop에서 호출
+
     BluetoothMessage message;
     if (os_queue_take(control_queue, &message, CONCURRENT_WAIT_FOREVER, nullptr) == 0)
     {
@@ -216,6 +233,23 @@ void loop()
                     Bluetooth::Disconnect(Node::SN2);
                 }
             }
+            break;
+        }
+        case BluetoothMessageId::MOTION_DETECTED:
+        {
+            Log.info("Motion Detected");
+            // Motion detected, turn on LED 3
+            if (message.data_payload.byte_data == 1)
+            {
+                data_manager.SetCallButtonActivatedSN2(true);
+                led_3.update_LED(LED_STATE::RED_FLASHING);
+            }
+            else
+            {
+                data_manager.SetCallButtonActivatedSN2(false);
+                led_3.update_LED(LED_STATE::GREEN_SOLID);
+            }
+
             break;
         }
         default:

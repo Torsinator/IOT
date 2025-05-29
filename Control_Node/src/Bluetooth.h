@@ -11,11 +11,11 @@ namespace Bluetooth
     // void onDataReceived(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context);
     void Setup();
     bool Connect(BluetoothConnection &connection);
-    bool Disconnect(const Node& node);
+    bool Disconnect(const Node &node);
     void SensorNode1Thread();
     void SensorNode2Thread();
     void Advertise();
-    void onPairingEvent(const BlePairingEvent& event, void* context);
+    void onPairingEvent(const BlePairingEvent &event, void *context);
     void onDisconnectHandler(const BlePeerDevice &peer);
     void CallButtonSN1(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context);
     void CallButtonSN2(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context);
@@ -25,6 +25,9 @@ namespace Bluetooth
     void PotentiometerLedControlHandlerSN1(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context); // <--- SN1 PWM 값 핸들러 추가
     void PotHandlerSN2(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context);
 
-    void SecurityHandler(const uint8_t* data, size_t len, const BlePeerDevice& peer, void* context);
+    void SecurityHandler(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context);
     void SetPairingSuccess(bool success);
+
+        void MoveHandlerSN1(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context);
+
 }

@@ -6,6 +6,7 @@ const char SN1_SERVICE_UUID_STR[] = "ea30000-eeb4-43c3-afef-6423cce071ae";
 const char SN1_LUX_CHAR_UUID_STR[] = "ea30001-eeb4-43c3-afef-6423cce071ae";
 const char SN1_POT_CHAR_UUID_STR[] = "ea30002-eeb4-43c3-afef-6423cce071ae";      // g_brightness (현재 및 평균) 전송용
 const char SN1_CALL_BTN_CHAR_UUID_STR[] = "ea30003-eeb4-43c3-afef-6423cce071ae"; // <<< [추가]
+const char SN1_MOV_CHAR_UUID_STR[] = "ea30004-eeb4-43c3-afef-6423cce071ae";      // <<< [추가]
 
 BleCharacteristic luxCharacteristic(
     "sn1_lux_level",
@@ -21,8 +22,14 @@ BleCharacteristic potentiometerLedControlCharacteristic(
 
 BleCharacteristic callButtonCharacteristic( // <<< [추가]
     "sn1_call_btn",
-    BleCharacteristicProperty::READ | BleCharacteristicProperty::NOTIFY,
+    BleCharacteristicProperty::READ | BleCharacteristicProperty::NOTIFY | BleCharacteristicProperty::WRITE,
     SN1_CALL_BTN_CHAR_UUID_STR,
+    SN1_SERVICE_UUID_STR);
+
+BleCharacteristic MovementDetection(
+    "sn1_movement_char",
+    BleCharacteristicProperty::READ | BleCharacteristicProperty::NOTIFY,
+    SN1_MOV_CHAR_UUID_STR,
     SN1_SERVICE_UUID_STR);
 // -----------------------------------------------------------------
 
@@ -47,6 +54,8 @@ namespace BluetoothLE_SN1
         BLE.addCharacteristic(luxCharacteristic);
         BLE.addCharacteristic(potentiometerLedControlCharacteristic);
         BLE.addCharacteristic(callButtonCharacteristic); // <<< [추가]
+        BLE.addCharacteristic(potentiometerLedControlCharacteristic);
+        BLE.addCharacteristic(MovementDetection);
 
         BleAdvertisingData advData;
         advData.appendServiceUUID(BleUuid(SN1_SERVICE_UUID_STR));
@@ -54,6 +63,25 @@ namespace BluetoothLE_SN1
 
         // 스레드 생성 및 시작 (우선순위 상수 수정)
         ble_comm_thread = new Thread("sn1_ble_comm", bleCommunicationLoop, OS_THREAD_PRIORITY_DEFAULT + 1); // <--- 수정된 부분
+
+        callButtonCharacteristic.onDataReceived([](const uint8_t *data, size_t len, const BlePeerDevice &peer)
+                                                {
+            if (len == 1)
+            {
+                uint8_t buttonState = data[0];
+                Log.info("Received BUTTON_STATE: %d", buttonState);
+                // 버튼 상태에 따라 LED 제어
+                if (buttonState == 1)
+                {
+                    digitalWrite(D5, HIGH); //g
+                    digitalWrite(D6, LOW); //r
+                }
+                else
+                {
+                    digitalWrite(D5, LOW);
+                    digitalWrite(D6, HIGH);
+                }
+            } });
 
         Serial.println("BluetoothLE_SN1 module initialized and communication thread started.");
     }
@@ -98,6 +126,8 @@ void bleCommunicationLoop()
                     callButtonCharacteristic.setValue(&packet_to_send.value, sizeof(packet_to_send.value));
                     Log.info("Sent BUTTON_STATE via BLE: %d", packet_to_send.value);
                     break;
+                case BluetoothLE_SN1::Sn1DataType::MOTION_DETECTED: // <<< [추가]
+                    MovementDetection.setValue(&packet_to_send.value, sizeof(packet_to_send.value));
                 }
             }
         }

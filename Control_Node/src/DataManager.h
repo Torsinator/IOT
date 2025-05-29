@@ -15,6 +15,7 @@ public:
     bool IsCallButtonActivatedSN2();
     uint8_t GetLightLevel();
     double GetPowerSN1();
+    bool GetMoveDetectedSN1();
 
     // SN2
     bool IsConnectedSN2();
@@ -24,13 +25,16 @@ public:
     uint16_t GetFanSpeed();
     double GetPowerSN2();
 
+    // CN
+    double GetPowerCN();
+
     // Setters
     // SN1
     void SetConnectedSN1(bool value);
     void SetCallButtonActivatedSN1(bool value);
     void SetLightLevel(uint8_t value);
     void SetPowerSN1(double value);
-
+    void GetMoveDetectedSN1(bool value);
     // SN2
     void SetConnectedSN2(bool value);
     void SetCallButtonActivatedSN2(bool value);
@@ -39,8 +43,12 @@ public:
     void SetFanSpeed(uint16_t value);
     void SetPowerSN2(double value);
 
+    // CN
+    void SetPowerCN(double value);
+
 private:
     os_mutex_t data_mutex;
     SensorNode1Data sn1_data{false, false, 0, 0};
     SensorNode2Data sn2_data{false, false, false, 0, 0, 0};
+    double cn_accumulated_power_mWh = 0.0; // <--- CN 누적 전력량 변수 추가
 };
