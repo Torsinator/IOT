@@ -29,6 +29,7 @@ const char SN1_LUX_CHAR_UUID[] = "ea30001-eeb4-43c3-afef-6423cce071ae";
 const char SN1_POT_CHAR_UUID[] = "ea30002-eeb4-43c3-afef-6423cce071ae";
 
 const char SN1_CALL_BTN_CHAR_UUID[] = "ea30003-eeb4-43c3-afef-6423cce071ae";
+const char SN1_MOV_CHAR_UUID_STR[] = "ea30004-eeb4-43c3-afef-6423cce071ae";      // <<< [추가]
 
 // bluetooth scan results
 const size_t SCAN_RESULT_MAX = 30;

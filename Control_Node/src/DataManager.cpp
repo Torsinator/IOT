@@ -9,6 +9,12 @@ DataManager::DataManager()
 }
 
 // Getters
+// CN
+double DataManager::GetPowerCN()
+{
+    MutexLockGuard lock(&data_mutex);
+    return cn_accumulated_power_mWh;
+}
 // SN1
 
 bool DataManager::IsConnectedSN1()
@@ -28,7 +34,11 @@ uint8_t DataManager::GetLightLevel()
     MutexLockGuard lock(&data_mutex);
     return sn1_data.light_level;
 }
-
+bool DataManager::GetMoveDetectedSN1()
+{
+    MutexLockGuard lock(&data_mutex);
+    return sn1_data.move_detected;
+}
 double DataManager::GetPowerSN1()
 {
     MutexLockGuard lock(&data_mutex);
@@ -73,6 +83,12 @@ double DataManager::GetPowerSN2()
 }
 
 // Setters
+// CN
+void DataManager::SetPowerCN(double value)
+{
+    MutexLockGuard lock(&data_mutex);
+    cn_accumulated_power_mWh = value;
+}
 // SN1
 void DataManager::SetConnectedSN1(bool value)
 {
@@ -90,6 +106,11 @@ void DataManager::SetLightLevel(uint8_t value)
 {
     MutexLockGuard lock(&data_mutex);
     sn1_data.light_level = value;
+}
+void DataManager::SetMoveDetectedSN1(bool value)
+{
+    MutexLockGuard lock(&data_mutex);
+    sn1_data.move_detected = value;
 }
 
 void DataManager::SetPowerSN1(double value)

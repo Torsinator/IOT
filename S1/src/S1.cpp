@@ -377,6 +377,7 @@ void loop()
       {
         currentLED = 0; // Green
         Serial.println("Motion Detected! Flashing GREEN LED.");
+        BluetoothLE_SN1::queueDataForSend(BluetoothLE_SN1::Sn1DataType::MOTION_DETECTED, 1); // 
       }
       else
       {

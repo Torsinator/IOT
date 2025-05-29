@@ -139,14 +139,19 @@ namespace LCD
             // 현재는 uint16_t로 되어 있으므로, 기존 방식대로
             double powerSN1 = data_manager.GetPowerSN1();
             double powerSN2 = data_manager.GetPowerSN2();
+            double powerCN = data_manager.GetPowerCN(); // CN 전력량 가져오기
 
             // 만약 DataManager가 float을 반환한다면:
             // sprintf(buffer1, "P_SN1: %.1f mWh", powerSN1_mWh);
             // sprintf(buffer2, "P_SN2: %.1f mWh", powerSN2_mWh);
 
             // 현재 uint16_t 방식:
-            sprintf(buffer1, "P_SN1: %5.1f mWh", powerSN1);
-            sprintf(buffer2, "P_SN2: %5.1f mWh", powerSN2);
+            // sprintf(buffer1, "P_SN1: %5.1f mWh", powerSN1);
+            // sprintf(buffer2, "P_SN2: %5.1f mWh", powerSN2);
+            snprintf(buffer1, sizeof(buffer2), "CN:%5.1f (mWh)", powerCN);
+
+            snprintf(buffer2, sizeof(buffer1), "S1:%5.1fS2:%5.1f", powerSN1, powerSN2);
+
             break;
         }
         case LcdScreenType::CONNECTION_STATUS:
