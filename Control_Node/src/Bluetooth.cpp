@@ -49,7 +49,6 @@ namespace Bluetooth
         sound_characteristic.onDataReceived(SoundHandler, NULL);
         temperature_measurement_characteristic.onDataReceived(TemperatureHandler, NULL);
         security_characteristic.onDataReceived(SecurityHandler, NULL);
-
         lux_characteristic_sn1.onDataReceived(LuxHandlerSN1, NULL);                                           // <--- SN1 lux callback
         potentiometer_led_control_characteristic_sn1.onDataReceived(PotentiometerLedControlHandlerSN1, NULL); // <--- SN1 PWM callback
         movement_characteristic_sn1.onDataReceived(MoveHandlerSN1, NULL);                                     // <--- SN1 lux callback
@@ -201,7 +200,7 @@ namespace Bluetooth
                         }
                         else
                         {
-                            Serial.println("TORS Failed to find characteristic");
+                            Serial.println("Failed to find characteristic");
                             // BLE.disconnect(connection.device);
                             return false;
                         }
@@ -347,20 +346,6 @@ namespace Bluetooth
 
     void CallButtonSN2(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context)
     {
-        // Node node_id;
-        // if (peer == sensor_node_1.device)
-        // {
-        //     node_id = SN1;
-        // }
-        // else if (peer == sensor_node_2.device)
-        // {
-        //     node_id = SN2;
-        // }
-        // else
-        // {
-        //     Log.error("Invalid peer in call button callback");
-        //     return;
-        // }
         Log.info("Call button SN2");
         BluetoothMessage message{Node::SN2, BluetoothMessageId::CALL_BTN};
         message.data_payload.bool_data = *(bool *)data;
@@ -455,4 +440,27 @@ namespace Bluetooth
             os_queue_put(control_queue, &message, 0, nullptr);
         }
     }
+
+    void SetFanDutyCycle(bool controlled, uint8_t duty)
+    {
+        Log.info("Setting Duty Cycle");
+        FanDutyCycleMessage message{controlled, duty};
+        fan_duty_cycle_characteristic.setValue(message);
+    }
+
+    void DeactivateCallSN1()
+    {
+        call_button_characteristic_sn1.setValue(false);
+    }
+
+    void DeactivateCallSN2()
+    {
+        call_button_characteristic_sn2.setValue(false);
+    }
+
+    void SetLightOnOff(bool value)
+    {
+        light_on_off_characteristic.setValue(value);
+    }
+
 } // namespace Bluetooth

@@ -24,10 +24,13 @@ namespace Bluetooth
     void LuxHandlerSN1(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context);
     void PotentiometerLedControlHandlerSN1(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context); // <--- SN1 PWM 값 핸들러 추가
     void PotHandlerSN2(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context);
-
-    void SecurityHandler(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context);
+    void SecurityHandler(const uint8_t* data, size_t len, const BlePeerDevice& peer, void* context);
     void SetPairingSuccess(bool success);
+    void SetFanDutyCycle(bool controlled, uint8_t duty);
+    void DeactivateCallSN1();
+    void DeactivateCallSN2();
+    void SetLightOnOff(bool value);
 
-        void MoveHandlerSN1(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context);
+    void MoveHandlerSN1(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context);
 
 }

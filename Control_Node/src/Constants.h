@@ -9,6 +9,9 @@
 #define LED_3_RED D4
 #define LED_3_GREEN D5
 
+#define CALL_ACK_BTN_SN1 D10
+#define CALL_ACK_BTN_SN2 D6
+
 // generated using https://bleid.netlify.app/
 // Bluetooth
 const char SN2_SERVICE_UUID[] = "ea10000-eeb4-43c3-afef-6423cce071ae";

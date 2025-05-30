@@ -17,6 +17,12 @@ double DataManager::GetPowerCN()
 }
 // SN1
 
+bool DataManager::GetLightsOn()
+{
+    MutexLockGuard lock(&data_mutex);
+    return sn1_data.light_level > 50;
+}
+
 bool DataManager::IsConnectedSN1()
 {
     MutexLockGuard lock(&data_mutex);
@@ -80,6 +86,24 @@ double DataManager::GetPowerSN2()
 {
     MutexLockGuard lock(&data_mutex);
     return sn2_data.power;
+}
+
+double DataManager::GetTemperatureLightsOn()
+{
+    MutexLockGuard lock(&data_mutex);
+    return sn2_data.set_duty_lights_on;
+}
+
+double DataManager::GetTemperatureLightsOff()
+{
+    MutexLockGuard lock(&data_mutex);
+    return sn2_data.set_duty_lights_off;
+}
+
+bool DataManager::GetFanControlled()
+{
+    MutexLockGuard lock(&data_mutex);
+    return sn2_data.fan_controlled;
 }
 
 // Setters
@@ -154,4 +178,22 @@ void DataManager::SetPowerSN2(double value)
 {
     MutexLockGuard lock(&data_mutex);
     sn2_data.power = value;
+}
+
+void DataManager::SetTemperatureLightsOff(double temp)
+{
+    MutexLockGuard lock(&data_mutex);
+    sn2_data.set_duty_lights_off = temp;
+}
+
+void DataManager::SetTemperatureLightsOn(double temp)
+{
+    MutexLockGuard lock(&data_mutex);
+    sn2_data.set_duty_lights_on = temp;
+}
+
+void DataManager::SetFanControlled(bool value)
+{
+    MutexLockGuard lock(&data_mutex);
+    sn2_data.fan_controlled = value;
 }

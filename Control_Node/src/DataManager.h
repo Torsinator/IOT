@@ -15,6 +15,7 @@ public:
     bool IsCallButtonActivatedSN2();
     uint8_t GetLightLevel();
     double GetPowerSN1();
+    bool GetLightsOn();
     bool GetMoveDetectedSN1();
 
     // SN2
@@ -24,6 +25,9 @@ public:
     double GetTemperatureLevel();
     uint16_t GetFanSpeed();
     double GetPowerSN2();
+    double GetTemperatureLightsOn();
+    double GetTemperatureLightsOff();
+    bool GetFanControlled();
 
     // CN
     double GetPowerCN();
@@ -34,7 +38,7 @@ public:
     void SetCallButtonActivatedSN1(bool value);
     void SetLightLevel(uint8_t value);
     void SetPowerSN1(double value);
-    void GetMoveDetectedSN1(bool value);
+    void SetMoveDetectedSN1(bool value);
     // SN2
     void SetConnectedSN2(bool value);
     void SetCallButtonActivatedSN2(bool value);
@@ -42,6 +46,9 @@ public:
     void SetTemperatureLevel(double value);
     void SetFanSpeed(uint16_t value);
     void SetPowerSN2(double value);
+    void SetTemperatureLightsOn(double temp);
+    void SetTemperatureLightsOff(double temp);
+    void SetFanControlled(bool value);
 
     // CN
     void SetPowerCN(double value);
