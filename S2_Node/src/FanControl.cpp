@@ -67,7 +67,9 @@ namespace Fan
 
     void SetDutyCycle(double duty)
     {
+        os_mutex_lock(fan_mtx);
         duty_cycle = duty;
+        os_mutex_unlock(fan_mtx);
     }
 
     // Thread function

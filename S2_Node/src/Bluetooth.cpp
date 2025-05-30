@@ -19,7 +19,7 @@ namespace Bluetooth
 
     BleCharacteristic call_button_characteristic(
         "call_button",
-        BleCharacteristicProperty::READ | BleCharacteristicProperty::NOTIFY,
+        BleCharacteristicProperty::READ | BleCharacteristicProperty::WRITE | BleCharacteristicProperty::INDICATE,
         SN2_CALL_BTN_CHAR_UUID, // Characteristic UUID as BleUuid
         SN2_SERVICE_UUID        // Service UUID as BleUuid
     );
@@ -87,6 +87,7 @@ namespace Bluetooth
 
         light_on_off_characteristic.onDataReceived(LightOnOffHandler);
         security_characterisic.onDataReceived(PairingHandler);
+        call_button_characteristic.onDataReceived(DeactivateCallButtonHandler);
 
         BLE.onConnected(onConnectHandler);
         BLE.onDisconnected(onDisconnectHandler);
@@ -116,7 +117,7 @@ namespace Bluetooth
             {
                 if (queue_value)
                 {
-                    BluetoothMessage disconnect{Node::SN2, BluetoothMessageId::DISCONNECT, nullptr};
+                    BluetoothMessage disconnect{Node::SN2, BluetoothMessageId::DISCONNECT, NULL};
                     os_queue_put(main_queue, &disconnect, 0, nullptr);
                     // while (true)
                     // {
@@ -204,18 +205,19 @@ namespace Bluetooth
 
     void SendSoundEvent(const bool value)
     {
-        sound_characteristic.setValue((uint8_t *)&value, sizeof(uint8_t));
+        sound_characteristic.setValue(value);
     }
 
     void DutyCycleHandler(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context)
     {
-        BluetoothMessage message{Node::SN2, BluetoothMessageId::FAN_DUTY, data};
+        BluetoothMessage message{Node::SN2, BluetoothMessageId::FAN_DUTY};
+        message.data_payload.fan_data = *(FanDutyCycleMessage*) data;
         os_queue_put(main_queue, &message, 0, nullptr);
     }
 
     void LightOnOffHandler(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context)
     {
-        BluetoothMessage message{Node::SN2, BluetoothMessageId::LIGHT, data};
+        BluetoothMessage message{Node::SN2, BluetoothMessageId::LIGHT, *(bool *)data};
         os_queue_put(main_queue, &message, 0, nullptr);
     }
 
@@ -224,7 +226,7 @@ namespace Bluetooth
         if ((bool)*data == true)
         {
             control_node_connection.is_connected = true;
-            BluetoothMessage connect{Node::SN2, BluetoothMessageId::CONNECT, nullptr};
+            BluetoothMessage connect{Node::SN2, BluetoothMessageId::CONNECT, NULL};
             os_queue_put(main_queue, &connect, 0, nullptr);
         }
         else
@@ -237,6 +239,12 @@ namespace Bluetooth
     {
         Log.info("Sending duty cycle: %d", value);
         fan_duty_characteristic.setValue((uint8_t *)&value, sizeof(uint8_t));
+    }
+
+    void DeactivateCallButtonHandler(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context)
+    {
+        BluetoothMessage message{Node::SN2, BluetoothMessageId::CALL_BTN_DEACTIVATED, *(bool *)data};
+        os_queue_put(main_queue, &message, 0, nullptr);
     }
 
 } // namespace Bluetooth

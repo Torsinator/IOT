@@ -1,19 +1,47 @@
-// Cloud.cpp
 #include "Cloud.h"
-#include "DataManager.h" // DataManager의 전역 인스턴스 사용을 위해
-#include "Particle.h"    // Log 및 Particle API 사용
 
-// Control_Node.cpp에 정의된 전역 DataManager 인스턴스를 사용하기 위한 extern 선언
-extern DataManager data_manager;
+#include <string>
+
+#include "Particle.h"
+#include "Structs.h"
+#include "DataManager.h"
 
 namespace Cloud
 {
-    void setup()
+    void Setup()
     {
-        // 클라우드 관련 초기 설정이 필요하다면 여기에 작성합니다.
-        // 예를 들어, Particle function이나 variable을 등록할 수 있습니다.
-        // 현재 요구사항에서는 Particle.publish만 사용하므로 특별한 setup은 없을 수 있습니다.
-        Log.info("Cloud module initialized.");
+        Particle.function("Set_Temperature_Lights_On", SetTemperatureLightsOn);
+        Particle.function("Set_Temperature_Lights_Off", SetTemperatureLightsOff);
+    }
+
+    int SetTemperatureLightsOn(String command)
+    {
+        if (command.length() == 0)
+        {
+            Log.info("Failed to set temperature, was not parsable to double");
+            return 1;
+        }
+        Log.info("Got cloud function call %s", command.c_str());
+        double temperature = std::stod(command.c_str());
+        BluetoothMessage message{Node::SN2, BluetoothMessageId::SET_TEMPERATURE_LIGHTS_ON};
+        message.data_payload.double_data = temperature;
+        os_queue_put(control_queue, &message, 0, nullptr);
+
+        return 0;
+    }
+
+    int SetTemperatureLightsOff(String command)
+    {
+        if (command.length() == 0)
+        {
+            Log.info("Failed to set temperature, was not parsable to double");
+            return 1;
+        }
+        double temperature = std::stod(command.c_str());
+        BluetoothMessage message{Node::SN2, BluetoothMessageId::SET_TEMPERATURE_LIGHTS_OFF};
+        message.data_payload.double_data = temperature;
+        os_queue_put(control_queue, &message, 0, nullptr);
+        return 0;
     }
 
     void publishPowerData()
@@ -38,7 +66,7 @@ namespace Cloud
             }
             data = String::format("%.2f %d", temperature, lux_level);
             if (!Particle.publish("Environment", data, PRIVATE))
-            {                                                                                               // 온도는 소수점 2자리까지
+            {                                                     // 온도는 소수점 2자리까지
                 Log.error("Failed to publish Environment data."); // 실패 시 값도 로그
                 success = false;
             }
@@ -87,5 +115,4 @@ namespace Cloud
             Log.warn("Cloud not connected. Skipping power data publish.");
         }
     }
-
-} // namespace Cloud
+}

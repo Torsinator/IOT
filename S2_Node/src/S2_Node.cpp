@@ -122,8 +122,8 @@ void loop()
         case BluetoothMessageId::LIGHT:
         {
             Log.info("Got Light Message");
-            bool *light_status = (bool *)message.data;
-            sound_LED.lights_on = *light_status;
+            bool light_status = message.data_payload.bool_data;
+            sound_LED.lights_on = light_status;
             sound_LED.get_next_state();
             sound_LED.update_LED();
             break;
@@ -136,9 +136,18 @@ void loop()
         case BluetoothMessageId::FAN_DUTY:
         {
             Log.info("Got Fan Duty Message");
-            FanDutyCycleMessage *duty_message = (FanDutyCycleMessage *)message.data;
-            Fan::SetDutyCycle(duty_message->duty_cycle);
-            Fan::SetOverrideStatus(duty_message->controlled);
+            FanDutyCycleMessage duty_message = message.data_payload.fan_data;
+            Fan::SetOverrideStatus(duty_message.controlled);
+            if (duty_message.controlled)
+            {
+                Log.info("Fan overridden duty cycle: %d", duty_message.duty_cycle);
+                Fan::SetOverrideStatus(true);
+                Fan::SetDutyCycle(duty_message.duty_cycle / 100.0);
+            }
+            else
+            {
+                Fan::SetOverrideStatus(false);
+            }
             break;
         }
         case BluetoothMessageId::PAIRING:
@@ -146,6 +155,13 @@ void loop()
             PairingStatus status = PairingStatus::PAIRING;
             os_queue_put(pairing_queue, &status, 0, nullptr);
             break;
+        }
+        case BluetoothMessageId::CALL_BTN_DEACTIVATED:
+        {
+            Log.info("Got call button deactivated");
+            CALL_LED.call_deactivated = true;
+            CALL_LED.get_next_state();
+            CALL_LED.update_LED();
         }
         default:
             break;

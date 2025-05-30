@@ -16,7 +16,6 @@ extern CallLED CALL_LED;
 namespace Emergency
 {
     // Set up variables
-    bool is_emergency = false;
     std::atomic_bool debouncing = false;
     os_queue_t button_queue;
     Timer debounce_timer(BTN_DEBOUNCE_MS, DebounceCallback, true);
@@ -58,9 +57,7 @@ namespace Emergency
                 // Only action if not debouncing
                 if (!debouncing && queue_value)
                 {
-                    // Toggle is_emergency
-                    is_emergency = !is_emergency;
-                    if (is_emergency)
+                    if (!CALL_LED.call_button_pressed)
                     {
                         Log.trace("Call button pressed");
                         CALL_LED.call_button_pressed = true;

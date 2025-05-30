@@ -24,7 +24,8 @@ enum class BluetoothMessageId
     CONNECT,
     DISCONNECT,
     FAN_DUTY,
-    PAIRING
+    PAIRING,
+    CALL_BTN_DEACTIVATED
 };
 
 enum class Node

@@ -101,9 +101,6 @@ namespace Security
                     SevenSeg::Off();
                     Log.info("Pairing done");
                 }
-                else if (queue_value == PairingStatus::BUTTON)
-                {
-                }
             }
         }
     }

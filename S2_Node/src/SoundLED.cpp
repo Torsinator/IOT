@@ -20,14 +20,15 @@ void SoundLED::get_next_state()
     case LED_STATE::INIT:
     {
         // Send bluetooth
-        Bluetooth::SendSoundEvent(true);
         if (sound_detected && lights_on)
         {
             next_state = LED_STATE::GREEN_FLASHING;
+            Bluetooth::SendSoundEvent(true);
         }
         else if (sound_detected && !lights_on)
         {
             next_state = LED_STATE::RED_FLASHING;
+            Bluetooth::SendSoundEvent(true);
         }
         else
         {
