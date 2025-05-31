@@ -17,6 +17,7 @@ public:
     double GetPowerSN1();
     bool GetLightsOn();
     bool GetMoveDetectedSN1();
+    uint16_t GetTargetLightLevel();
 
     // SN2
     bool IsConnectedSN2();
@@ -39,6 +40,7 @@ public:
     void SetLightLevel(uint8_t value);
     void SetPowerSN1(double value);
     void SetMoveDetectedSN1(bool value);
+    void SetTargetLightLevel(uint16_t value);
     // SN2
     void SetConnectedSN2(bool value);
     void SetCallButtonActivatedSN2(bool value);

@@ -30,6 +30,7 @@ namespace Bluetooth
     void DeactivateCallSN1();
     void DeactivateCallSN2();
     void SetLightOnOff(bool value);
+    void SetTargetLightLevel(uint16_t value);
 
     void MoveHandlerSN1(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context);
 

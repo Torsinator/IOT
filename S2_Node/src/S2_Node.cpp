@@ -160,6 +160,7 @@ void loop()
         {
             Log.info("Got call button deactivated");
             CALL_LED.call_deactivated = true;
+            CALL_LED.call_button_pressed = false;
             CALL_LED.get_next_state();
             CALL_LED.update_LED();
         }

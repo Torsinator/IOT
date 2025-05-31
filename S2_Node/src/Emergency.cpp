@@ -52,6 +52,7 @@ namespace Emergency
         {
             // Check for state update
             bool queue_value;
+            bool temp_value;
             if (os_queue_take(button_queue, &queue_value, CONCURRENT_WAIT_FOREVER, nullptr) == 0)
             {
                 // Only action if not debouncing
@@ -59,16 +60,20 @@ namespace Emergency
                 {
                     if (!CALL_LED.call_button_pressed)
                     {
-                        Log.trace("Call button pressed");
+                        Log.info("Call button pressed");
                         CALL_LED.call_button_pressed = true;
+                        temp_value = true;
                     }
                     else
                     {
-                        Log.trace("Call button deactivated");
+                        Log.info("Call button deactivated");
+                        CALL_LED.call_button_pressed = false;
                         CALL_LED.call_deactivated = true;
+                        temp_value = false;
+
                     }
                     // Send notification via ble
-                    Bluetooth::SendButtonPress(CALL_LED.call_button_pressed);
+                    Bluetooth::SendButtonPress(temp_value);
                     
                     // Update the LED state
                     CALL_LED.get_next_state();

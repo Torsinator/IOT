@@ -84,267 +84,291 @@ void setup()
 
 void loop()
 {
-    // float temperature = 23.5;
-    // int lux = 600;
-
-    // String data = String::format("{\"temperature\":%.2f,\"lux\":%d}", temperature, lux);
-    // Particle.publish("envData", data, PRIVATE);
-
     Particle.process(); // SYSTEM_MODE(MANUAL)일 때 loop에서 호출
 
     BluetoothMessage message;
+    Log.trace("Waiting for queue");
     if (os_queue_take(control_queue, &message, CONCURRENT_WAIT_FOREVER, nullptr) == 0)
     {
         Log.info("Got queue item: %d", (int)message.message_type);
-        switch (message.message_type)
+        // Check to see if paring success
+        if (!(message.node_id == Node::SN2 && !data_manager.IsConnectedSN2() && message.message_type != BluetoothMessageId::SECURITY))
         {
-        case BluetoothMessageId::CONNECT:
-        {
-            Log.info("In Connect");
-            if (message.node_id == Node::SN1)
+            switch (message.message_type)
             {
-                data_manager.SetConnectedSN1(true);
-                // [추가] SN1 연결 시 CN LED1 녹색 고정
-                if (!data_manager.IsCallButtonActivatedSN1())
-                { // 호출 버튼이 활성화 상태가 아닐 때만 녹색으로 변경
-                    led_1.update_LED(LED_STATE::GREEN_SOLID);
-                    Log.info("CN: LED1 set to GREEN_SOLID (SN1 Connected)");
-                }
-            }
-            else if (message.node_id == Node::SN2)
+            case BluetoothMessageId::CONNECT:
             {
-                Log.info("In SN2");
-                Log.info("Done");
-            }
-            break;
-        }
-        case BluetoothMessageId::DISCONNECT:
-        {
-            Log.info("In Disconnect");
-            Log.info("Node: %d", (int)message.node_id);
-            if (message.node_id == Node::SN1)
-            {
-                data_manager.SetConnectedSN1(false);
-                // [추가] SN1 연결 끊김 시 CN LED1 꺼짐 (또는 다른 상태, 여기서는 OFF로 가정)
-                // 만약 호출 버튼이 활성화된 상태에서 연결이 끊겼다면, 빨간색 점멸을 유지할지 결정 필요.
-                // 여기서는 일단 호출 상태와 관계없이 연결 끊김을 우선하여 LED OFF.
-                led_1.update_LED(LED_STATE::OFF);
-                Log.info("CN: LED1 set to OFF (SN1 Disconnected)");
-            }
-            else if (message.node_id == Node::SN2)
-            {
-                data_manager.SetConnectedSN2(false);
-                led_2.update_LED(LED_STATE::OFF);
-            }
-            break;
-        }
-        case BluetoothMessageId::TEMPERATURE:
-        {
-            double temperature = message.data_payload.word_data / 100.0;
-            data_manager.SetTemperatureLevel(message.data_payload.word_data / 100.0);
-            if (data_manager.GetLightsOn())
-            {
-                Log.info("Lights are on");
-                if (temperature > data_manager.GetTemperatureLightsOn() && !data_manager.GetFanControlled())
+                Log.info("In Connect");
+                if (message.node_id == Node::SN1)
                 {
-                    Log.info("Overriding fan with 40 duty");
-                    Bluetooth::SetFanDutyCycle(true, 40);
-                    data_manager.SetFanControlled(true);
+                    data_manager.SetConnectedSN1(true);
+                    // [추가] SN1 연결 시 CN LED1 녹색 고정
+                    if (!data_manager.IsCallButtonActivatedSN1())
+                    { // 호출 버튼이 활성화 상태가 아닐 때만 녹색으로 변경
+                        led_1.update_LED(LED_STATE::GREEN_SOLID);
+                        Log.info("CN: LED1 set to GREEN_SOLID (SN1 Connected)");
+                    }
+                    Cloud::publishDetectionData();
                 }
-                else if (temperature <= data_manager.GetTemperatureLightsOn() && data_manager.GetFanControlled())
+                else if (message.node_id == Node::SN2)
                 {
-                    Log.info("Cancelling overriding fan with 0 duty");
-                    data_manager.SetFanControlled(false);
-                    Bluetooth::SetFanDutyCycle(false, 0);
+                    Log.info("In SN2");
+                    Log.info("Done");
                 }
+                break;
             }
-            else
+            case BluetoothMessageId::DISCONNECT:
             {
-                Log.info("Lights are off");
-                if (temperature > data_manager.GetTemperatureLightsOff())
+                Log.info("In Disconnect");
+                Log.info("Node: %d", (int)message.node_id);
+                if (message.node_id == Node::SN1)
                 {
-                    Bluetooth::SetFanDutyCycle(true, 100);
-                    data_manager.SetFanControlled(true);
+                    data_manager.SetConnectedSN1(false);
+                    // [추가] SN1 연결 끊김 시 CN LED1 꺼짐 (또는 다른 상태, 여기서는 OFF로 가정)
+                    // 만약 호출 버튼이 활성화된 상태에서 연결이 끊겼다면, 빨간색 점멸을 유지할지 결정 필요.
+                    // 여기서는 일단 호출 상태와 관계없이 연결 끊김을 우선하여 LED OFF.
+                    led_1.update_LED(LED_STATE::OFF);
+                    Log.info("CN: LED1 set to OFF (SN1 Disconnected)");
                 }
-                else if (data_manager.GetFanControlled())
+                else if (message.node_id == Node::SN2)
                 {
-                    data_manager.SetFanControlled(false);
-                    Bluetooth::SetFanDutyCycle(false, 0);
+                    data_manager.SetConnectedSN2(false);
+                    led_2.update_LED(LED_STATE::OFF);
                 }
+                Cloud::publishDetectionData();
+                break;
             }
-            Log.info("Got Temperature: %.2f", data_manager.GetTemperatureLevel());
-            break;
-        }
-        case BluetoothMessageId::LIGHT:
-        {
-            if (message.node_id == Node::SN1)
+            case BluetoothMessageId::TEMPERATURE:
             {
-                uint8_t lux_value_from_sn1 = message.data_payload.byte_data;
-                Log.info("CtrlNode - Value in case LIGHT from message.value_data: %u", lux_value_from_sn1);
-
-                if (lux_value_from_sn1 > 50 && !data_manager.GetLightsOn())
+                double temperature = message.data_payload.word_data / 100.0;
+                data_manager.SetTemperatureLevel(message.data_payload.word_data / 100.0);
+                if (data_manager.GetLightsOn())
                 {
-                    Bluetooth::SetLightOnOff(true);
-                }
-                else if (data_manager.GetLightsOn())
-                {
-                    Bluetooth::SetLightOnOff(false);
-                }
-
-                data_manager.SetLightLevel((double)lux_value_from_sn1);
-            }
-            // Log.info("SN1 Lux updated in DataManager: %u", lux_value_from_sn1); // 이 로그는 DataManager.SetLightLevel 내부 로그로 대체 가능
-
-            break;
-        }
-        case BluetoothMessageId::SN1_PWM_VALUE:
-        {
-            if (message.node_id == Node::SN1)
-            {
-                uint8_t pwm_value_from_sn1 = message.data_payload.byte_data;
-                PowerEstimator::processSn1PwmValue(pwm_value_from_sn1); // PowerEstimator로 PWM 값 전달
-            }
-            break;
-        }
-        case BluetoothMessageId::SN2_PWM_VALUE: // <--- 이 케이스 추가 또는 수정
-        {
-            if (message.node_id == Node::SN2)
-            {
-                uint8_t pwm_value_from_sn2 = message.data_payload.byte_data; // 0-100 범위의 값
-                Log.info("CtrlNode - SN2_PWM_VALUE (Fan Duty %%) from SN2: %u", pwm_value_from_sn2);
-                PowerEstimator::processSn2PwmValue(pwm_value_from_sn2); // PowerEstimator로 SN2 PWM 값 전달
-
-                // 팬 속도(PWM 값)를 DataManager에도 저장 (선택 사항, LCD 표시 등에 사용 가능)
-                // DataManager의 SetFanSpeed는 uint16_t를 받으므로 캐스팅
-                data_manager.SetFanSpeed(static_cast<uint16_t>(pwm_value_from_sn2));
-                Log.info("CtrlNode - SN2 Fan Speed (PWM %%) set in DataManager: %u", pwm_value_from_sn2);
-            }
-            break;
-        }
-        case BluetoothMessageId::CALL_BTN:
-        {
-            Log.info("Call Button Pressed");
-            if (message.node_id == Node::SN1)
-            {
-                if (message.data_payload.bool_data)
-                {
-                    data_manager.SetCallButtonActivatedSN1(true);
-                    led_1.update_LED(LED_STATE::RED_FLASHING);
+                    Log.info("Lights are on");
+                    if (temperature > data_manager.GetTemperatureLightsOn() && !data_manager.GetFanControlled())
+                    {
+                        Log.info("Overriding fan with 40 duty");
+                        Bluetooth::SetFanDutyCycle(true, 40);
+                        data_manager.SetFanControlled(true);
+                    }
+                    else if (temperature <= data_manager.GetTemperatureLightsOn() && data_manager.GetFanControlled())
+                    {
+                        Log.info("Cancelling overriding fan with 0 duty");
+                        data_manager.SetFanControlled(false);
+                        Bluetooth::SetFanDutyCycle(false, 0);
+                    }
                 }
                 else
                 {
+                    Log.info("Lights are off");
+                    if (temperature > data_manager.GetTemperatureLightsOff())
+                    {
+                        Bluetooth::SetFanDutyCycle(true, 100);
+                        data_manager.SetFanControlled(true);
+                    }
+                    else if (data_manager.GetFanControlled())
+                    {
+                        data_manager.SetFanControlled(false);
+                        Bluetooth::SetFanDutyCycle(false, 0);
+                    }
+                }
+                Log.info("Got Temperature: %.2f", data_manager.GetTemperatureLevel());
+                break;
+            }
+            case BluetoothMessageId::LIGHT:
+            {
+                if (message.node_id == Node::SN1)
+                {
+                    uint8_t lux_value_from_sn1 = message.data_payload.byte_data;
+                    Log.info("CtrlNode - Value in case LIGHT from message.value_data: %u", lux_value_from_sn1);
+
+                    if (lux_value_from_sn1 > 50 && !data_manager.GetLightsOn())
+                    {
+                        Bluetooth::SetLightOnOff(true);
+                    }
+                    else if (data_manager.GetLightsOn())
+                    {
+                        Bluetooth::SetLightOnOff(false);
+                    }
+
+                    data_manager.SetLightLevel((double)lux_value_from_sn1);
+                }
+                // Log.info("SN1 Lux updated in DataManager: %u", lux_value_from_sn1); // 이 로그는 DataManager.SetLightLevel 내부 로그로 대체 가능
+
+                break;
+            }
+            case BluetoothMessageId::SN1_PWM_VALUE:
+            {
+                if (message.node_id == Node::SN1)
+                {
+                    uint8_t pwm_value_from_sn1 = message.data_payload.byte_data;
+                    PowerEstimator::processSn1PwmValue(pwm_value_from_sn1); // PowerEstimator로 PWM 값 전달
+                }
+                break;
+            }
+            case BluetoothMessageId::SN2_PWM_VALUE: // <--- 이 케이스 추가 또는 수정
+            {
+                if (message.node_id == Node::SN2)
+                {
+                    uint8_t pwm_value_from_sn2 = message.data_payload.byte_data; // 0-100 범위의 값
+                    Log.info("CtrlNode - SN2_PWM_VALUE (Fan Duty %%) from SN2: %u", pwm_value_from_sn2);
+                    PowerEstimator::processSn2PwmValue(pwm_value_from_sn2); // PowerEstimator로 SN2 PWM 값 전달
+
+                    // 팬 속도(PWM 값)를 DataManager에도 저장 (선택 사항, LCD 표시 등에 사용 가능)
+                    // DataManager의 SetFanSpeed는 uint16_t를 받으므로 캐스팅
+                    data_manager.SetFanSpeed(static_cast<uint16_t>(pwm_value_from_sn2));
+                    Log.info("CtrlNode - SN2 Fan Speed (PWM %%) set in DataManager: %u", pwm_value_from_sn2);
+                }
+                break;
+            }
+            case BluetoothMessageId::CALL_BTN:
+            {
+                Log.info("Call Button Pressed");
+                if (message.node_id == Node::SN1)
+                {
+                    if (message.data_payload.bool_data)
+                    {
+                        data_manager.SetCallButtonActivatedSN1(true);
+                        led_1.update_LED(LED_STATE::RED_FLASHING);
+                    }
+                    else
+                    {
+                        data_manager.SetCallButtonActivatedSN1(false);
+                        led_1.update_LED(LED_STATE::GREEN_SOLID);
+                    }
+                }
+
+                else if (message.node_id == Node::SN2)
+                {
+                    if (message.data_payload.bool_data)
+                    {
+                        data_manager.SetCallButtonActivatedSN2(true);
+                        led_2.update_LED(LED_STATE::RED_FLASHING);
+                    }
+                    else
+                    {
+                        data_manager.SetCallButtonActivatedSN2(false);
+                        led_2.update_LED(LED_STATE::GREEN_SOLID);
+                    }
+                }
+                Cloud::publishDetectionData();
+                break;
+            }
+            case BluetoothMessageId::SOUND_CHANGE:
+            {
+                Log.info("Sound Change");
+                bool value = message.data_payload.bool_data;
+                data_manager.SetSoundDetected(value);
+                if (value)
+                {
+                    // Check If lights are on
+                    if (data_manager.GetLightsOn())
+                    {
+                        led_3.update_LED(LED_STATE::GREEN_FLASHING);
+                    }
+                    else
+                    {
+                        led_3.update_LED(LED_STATE::RED_FLASHING);
+                    }
+                }
+                else
+                {
+                    // Sound not detected
+                    led_3.update_LED(LED_STATE::GREEN_SOLID);
+                }
+                // Cloud::publishDetectionData(); // TODO: uncomment for demo
+                break;
+            }
+            case BluetoothMessageId::POWER:
+                break;
+            case BluetoothMessageId::SECURITY:
+            {
+                Log.info("In security");
+                if (message.node_id == Node::SN1)
+                {
+                    data_manager.SetConnectedSN1(false);
+                }
+                else if (message.node_id == Node::SN2)
+                {
+                    uint8_t *entered_password = message.data_payload.string_data;
+                    Log.info("Entered Password %s", entered_password);
+                    if (strncmp((char *)entered_password, "0123456", 6) == 0)
+                    {
+                        Log.info("Correct Pin");
+                        // Compare passwords
+                        Bluetooth::SetPairingSuccess(true);
+                        data_manager.SetConnectedSN2(true);
+                        led_2.update_LED(LED_STATE::GREEN_SOLID);
+                    }
+                    else
+                    {
+                        Log.info("Incorrect Pin, disconnecting");
+                        Bluetooth::Disconnect(Node::SN2);
+                    }
+                }
+                Cloud::publishDetectionData();
+                break;
+            }
+            case BluetoothMessageId::SET_TEMPERATURE_LIGHTS_ON:
+            {
+                data_manager.SetTemperatureLightsOn(message.data_payload.double_data);
+                break;
+            }
+            case BluetoothMessageId::SET_TEMPERATURE_LIGHTS_OFF:
+            {
+                data_manager.SetTemperatureLightsOff(message.data_payload.double_data);
+                break;
+            }
+            case BluetoothMessageId::CALL_BUTTON_OFF:
+            {
+                Log.info("Got button press");
+                if (message.node_id == Node::SN1)
+                {
+                    Bluetooth::DeactivateCallSN1();
                     data_manager.SetCallButtonActivatedSN1(false);
                     led_1.update_LED(LED_STATE::GREEN_SOLID);
                 }
-            }
-
-            else if (message.node_id == Node::SN2)
-            {
-                if (message.data_payload.bool_data)
+                else if (message.node_id == Node::SN2)
                 {
-                    data_manager.SetCallButtonActivatedSN2(true);
-                    led_2.update_LED(LED_STATE::RED_FLASHING);
-                }
-                else
-                {
+                    Bluetooth::DeactivateCallSN2();
                     data_manager.SetCallButtonActivatedSN2(false);
                     led_2.update_LED(LED_STATE::GREEN_SOLID);
                 }
+                Cloud::publishDetectionData();
+                break;
             }
-            break;
-        }
-        case BluetoothMessageId::SOUND_CHANGE:
-        {
-            Log.info("Sound Change");
-            bool value = message.data_payload.bool_data;
-            data_manager.SetSoundDetected(value);
-            if (value)
+            case BluetoothMessageId::MOTION_DETECTED:
             {
-                // Check If lights are on
-                led_3.update_LED(LED_STATE::GREEN_SOLID);
-            }
-            else
-            {
-                //
-                led_3.update_LED(LED_STATE::OFF);
-            }
-            break;
-        }
-        case BluetoothMessageId::POWER:
-            break;
-        case BluetoothMessageId::SECURITY:
-        {
-            Log.info("In security");
-            if (message.node_id == Node::SN1)
-            {
-                data_manager.SetConnectedSN1(false);
-            }
-            else if (message.node_id == Node::SN2)
-            {
-                uint8_t *entered_password = message.data_payload.string_data;
-                Log.info("Entered Password %s", entered_password);
-                if (strncmp((char *)entered_password, "0123456", 6) == 0)
+                Log.info("Motion Detected");
+                // Motion detected, turn on LED 3
+                if (message.data_payload.byte_data == 1)
                 {
-                    Log.info("Correct Pin");
-                    // Compare passwords
-                    Bluetooth::SetPairingSuccess(true);
-                    data_manager.SetConnectedSN2(true);
-                    led_2.update_LED(LED_STATE::GREEN_SOLID);
+                    if (data_manager.GetLightsOn())
+                    {
+                        led_3.update_LED(LED_STATE::GREEN_FLASHING);
+                    }
+                    else
+                    {
+                        led_3.update_LED(LED_STATE::RED_FLASHING);
+                    }
                 }
                 else
                 {
-                    Log.info("Incorrect Pin, disconnecting");
-                    Bluetooth::Disconnect(Node::SN2);
+                    led_3.update_LED(LED_STATE::GREEN_SOLID);
                 }
+                data_manager.SetMoveDetectedSN1((bool) message.data_payload.byte_data);
+                // Cloud::publishDetectionData(); // TODO: uncomment for demo
+                break;
             }
-            break;
-        }
-        case BluetoothMessageId::SET_TEMPERATURE_LIGHTS_ON:
-        {
-            data_manager.SetTemperatureLightsOn(message.data_payload.double_data);
-            break;
-        }
-        case BluetoothMessageId::SET_TEMPERATURE_LIGHTS_OFF:
-        {
-            data_manager.SetTemperatureLightsOff(message.data_payload.double_data);
-            break;
-        }
-        case BluetoothMessageId::CALL_BUTTON_OFF:
-        {
-            Log.info("Got button press");
-            if (message.node_id == Node::SN1)
+            case BluetoothMessageId::SET_LUX_LEVEL:
             {
-                Bluetooth::DeactivateCallSN1();
-                data_manager.SetCallButtonActivatedSN1(false);
-                led_1.update_LED(LED_STATE::GREEN_SOLID);
+                data_manager.SetTargetLightLevel(message.data_payload.word_data);
+                Bluetooth::SetTargetLightLevel(message.data_payload.word_data);
+                break;
             }
-            else if (message.node_id == Node::SN2)
-            {
-                Bluetooth::DeactivateCallSN2();
-                data_manager.SetCallButtonActivatedSN2(false);
-                led_2.update_LED(LED_STATE::GREEN_SOLID);
+            default:
+                break;
             }
-            break;
-        }
-        case BluetoothMessageId::MOTION_DETECTED:
-        {
-            Log.info("Motion Detected");
-            // Motion detected, turn on LED 3
-            if (message.data_payload.byte_data == 1)
-            {
-                data_manager.SetCallButtonActivatedSN2(true);
-                led_3.update_LED(LED_STATE::RED_FLASHING);
-            }
-            else
-            {
-                data_manager.SetCallButtonActivatedSN2(false);
-                led_3.update_LED(LED_STATE::GREEN_SOLID);
-            }
-
-            break;
-        }
-        default:
-            break;
         }
     }
 }

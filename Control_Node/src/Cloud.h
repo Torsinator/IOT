@@ -11,5 +11,7 @@ namespace Cloud
     void Setup();
     int SetTemperatureLightsOn(String command);
     int SetTemperatureLightsOff(String command);
+    int SetLightLevel(String command);
     void publishPowerData();
+    void publishDetectionData();
 }

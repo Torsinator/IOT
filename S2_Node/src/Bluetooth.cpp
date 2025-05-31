@@ -162,7 +162,8 @@ namespace Bluetooth
 
     void onDisconnectHandler(const BlePeerDevice &peer)
     {
-        os_queue_put(connection_queue, &control_node_connection.is_connected, 0, nullptr);
+        BluetoothMessage message{Node::SN2, BluetoothMessageId::DISCONNECT, NULL};
+        os_queue_put(connection_queue, &message, 0, nullptr);
     }
 
     void onPairingEvent(const BlePairingEvent &event, void *context)
