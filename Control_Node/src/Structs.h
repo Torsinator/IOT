@@ -32,6 +32,7 @@ typedef struct
     uint8_t light_level;
     double power;
     bool move_detected;
+    uint16_t target_lux_level;
 } SensorNode1Data;
 
 typedef struct
@@ -52,3 +53,9 @@ typedef struct
     bool controlled;
     uint8_t duty_cycle;
 } FanDutyCycleMessage;
+
+typedef struct
+{
+    bool controlled;
+    uint8_t taget_level;
+} LightLevelMessage;

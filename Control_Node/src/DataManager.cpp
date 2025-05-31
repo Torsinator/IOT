@@ -51,6 +51,12 @@ double DataManager::GetPowerSN1()
     return sn1_data.power;
 }
 
+uint16_t DataManager::GetTargetLightLevel()
+{
+    MutexLockGuard lock(&data_mutex);
+    return sn1_data.target_lux_level;
+}
+
 // SN2
 bool DataManager::IsConnectedSN2()
 {
@@ -196,4 +202,10 @@ void DataManager::SetFanControlled(bool value)
 {
     MutexLockGuard lock(&data_mutex);
     sn2_data.fan_controlled = value;
+}
+
+void DataManager::SetTargetLightLevel(uint16_t value)
+{
+    MutexLockGuard lock(&data_mutex);
+    sn1_data.target_lux_level = value;
 }

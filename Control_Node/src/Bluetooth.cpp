@@ -101,9 +101,9 @@ namespace Bluetooth
                     os_queue_put(control_queue, &disconnect, 0, nullptr);
                     Log.info("Advertising");
                     Advertise();
+                    Log.info("Attempting to connect to sensor node 2");
                     while (true)
                     {
-                        Log.info("Attempting to connect to sensor node 2");
                         if (Connect(sensor_node_2))
                         {
                             Log.info("Successfully connected to sensor node 2");
@@ -111,7 +111,7 @@ namespace Bluetooth
                             os_queue_put(control_queue, &connect, 0, nullptr);
                             break;
                         }
-                        Log.error("Failed to connect to sensor node 2, retrying in 1s");
+                        Log.trace("Failed to connect to sensor node 2, retrying in 1s");
                         delay(1000);
                     }
                 }
@@ -130,9 +130,9 @@ namespace Bluetooth
                 {
                     BluetoothMessage disconnect{Node::SN1, BluetoothMessageId::DISCONNECT, (uint8_t *)&queue_value};
                     os_queue_put(control_queue, &disconnect, 0, nullptr);
+                    Log.info("Attempting to connect to sensor node 1");
                     while (true)
                     {
-                        Log.info("Attempting to connect to sensor node 1");
                         if (Connect(sensor_node_1))
                         {
                             Log.info("Successfully connected to sensor node 1");
@@ -140,7 +140,7 @@ namespace Bluetooth
                             os_queue_put(control_queue, &connect, 0, nullptr);
                             break;
                         }
-                        Log.error("Failed to connect to sensor node 1, retrying in 1s");
+                        Log.trace("Failed to connect to sensor node 1, retrying in 1s");
                         delay(1000);
                     }
                 }
@@ -152,25 +152,15 @@ namespace Bluetooth
     {
         for (auto &result : BLE.scan())
         {
-            Log.info("looking at result");
             for (auto &service : result.advertisingData().serviceUUID())
             {
-                Log.info("Service UUID: %s", service.toString().c_str());
+                Log.trace("Service UUID: %s", service.toString().c_str());
                 if (service == connection.service_uuid)
                 {
                     connection.device = BLE.connect(result.address());
                     connection.is_connected = true;
 
                     auto char_uuids = connection.device.discoverAllCharacteristics();
-                    // Log.info("Connections %d", char_uuids.size());
-                    // for (auto &i : char_uuids)
-                    // {
-                    //     Log.info(i.UUID().toString());
-                    // }
-                    // if (connection.device.getCharacteristicByUUID(call_button_characteristic_sn1, BleUuid(SN1_CALL_BTN_CHAR_UUID)))
-                    // {
-                    //     Serial.println("Found call button characteristic");
-                    // }
                     if (connection.service_uuid == BleUuid(SN2_SERVICE_UUID))
                     {
                         Serial.println("YEP node found");
@@ -205,10 +195,10 @@ namespace Bluetooth
                             return false;
                         }
                     }
-                    else // 그 외의 경우 (즉, sensor_node_1, 본인 센서노드)
+                    else
                     {
                         // 이 블록이 sensor_node_1에 해당합니다.
-                        Log.info("Device is SN1. Discovering SN1 characteristics...");
+                        Log.trace("Device is SN1. Discovering SN1 characteristics...");
                         // SN1_SERVICE_UUID로 연결되었으므로, SN1의 특성을 찾습니다.
                         // SN_PHOTON2_LUX_CHAR_UUID는 Constants.h에 정의된 SN1의 밝기 특성 UUID여야 합니다.
                         if (connection.device.getCharacteristicByUUID(lux_characteristic_sn1, BleUuid(SN1_LUX_CHAR_UUID)))
@@ -238,6 +228,11 @@ namespace Bluetooth
                         //    Serial.println("Found SN1 call button characteristic");
                         // }
                         if (connection.device.getCharacteristicByUUID(potentiometer_led_control_characteristic_sn1, BleUuid(SN1_POT_CHAR_UUID)))
+                        {
+                            Serial.println("Found SN1 Potentiometer/LED Control characteristic");
+                        }
+
+                        if (connection.device.getCharacteristicByUUID(movement_characteristic_sn1, BleUuid(SN1_MOV_CHAR_UUID_STR)))
                         {
                             Serial.println("Found SN1 Potentiometer/LED Control characteristic");
                         }
@@ -279,11 +274,6 @@ namespace Bluetooth
         else if (event.type == BlePairingEventType::NUMERIC_COMPARISON)
         {
             Log.info("onPairingEvent NUMERIC_COMPARISON");
-        }
-        if (event.type == BlePairingEventType::PASSKEY_INPUT)
-        {
-            Log.info("Passkey input: Sent 123456");
-            BLE.setPairingPasskey(event.peer, (const uint8_t *)"123456");
         }
     }
 
@@ -461,6 +451,13 @@ namespace Bluetooth
     void SetLightOnOff(bool value)
     {
         light_on_off_characteristic.setValue(value);
+    }
+
+    void SetTargetLightLevel(uint16_t value)
+    {
+        Log.info("Set the target lux level");
+        LightLevelMessage msg {true, (uint8_t)value};
+        lux_characteristic_sn1.setValue(msg);
     }
 
 } // namespace Bluetooth

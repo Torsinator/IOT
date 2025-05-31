@@ -38,7 +38,7 @@ void CallLED::get_next_state()
     {
         if (call_button_pressed)
         {
-            call_button_pressed = false;
+            // call_button_pressed = false;
             next_state = LED_STATE::RED_FLASHING;
         }
         else if (bluetooth_connection)
