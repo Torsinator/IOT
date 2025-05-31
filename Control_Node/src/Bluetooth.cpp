@@ -197,10 +197,7 @@ namespace Bluetooth
                     }
                     else
                     {
-                        // 이 블록이 sensor_node_1에 해당합니다.
                         Log.trace("Device is SN1. Discovering SN1 characteristics...");
-                        // SN1_SERVICE_UUID로 연결되었으므로, SN1의 특성을 찾습니다.
-                        // SN_PHOTON2_LUX_CHAR_UUID는 Constants.h에 정의된 SN1의 밝기 특성 UUID여야 합니다.
                         if (connection.device.getCharacteristicByUUID(lux_characteristic_sn1, BleUuid(SN1_LUX_CHAR_UUID)))
                         {
                             Serial.println("Found SN1 Lux characteristic");
@@ -208,9 +205,6 @@ namespace Bluetooth
                         else
                         {
                             Serial.println("ERROR: SN1 Lux characteristic NOT FOUND");
-                            // connection.device.disconnect(); // 필요시 연결 해제
-                            // connection.is_connected = false;
-                            // return false;
                         }
                         if (connection.device.getCharacteristicByUUID(call_button_characteristic_sn1, BleUuid(SN1_CALL_BTN_CHAR_UUID)))
                         {
@@ -219,14 +213,7 @@ namespace Bluetooth
                         else
                         {
                             Serial.println("ERROR: SN1 Lux characteristic NOT FOUND");
-                            // connection.device.disconnect(); // 필요시 연결 해제
-                            // connection.is_connected = false;
-                            // return false;
                         }
-                        // SN1에 버튼 기능이 있다면 여기서 추가
-                        // if (connection.device.getCharacteristicByUUID(call_button_characteristic_sn1, BleUuid(SN1_CALL_BTN_CHAR_UUID))) {
-                        //    Serial.println("Found SN1 call button characteristic");
-                        // }
                         if (connection.device.getCharacteristicByUUID(potentiometer_led_control_characteristic_sn1, BleUuid(SN1_POT_CHAR_UUID)))
                         {
                             Serial.println("Found SN1 Potentiometer/LED Control characteristic");
@@ -391,19 +378,12 @@ namespace Bluetooth
     {
         if (len > 0 && data != nullptr)
         {
-            // // uint8_t received_lux_value = data[0];
-            // // Log.info("SN1 Lux data received via BLE: %u", received_lux_value);
-            // BluetoothMessage message{Node::SN1, BluetoothMessageId::LIGHT, data};
-            // Log.info("SN1 Lux data received via BLE: %u", *message.data);
-            // os_queue_put(control_queue, &message, 0, nullptr);
-
             uint8_t received_lux_value = data[0];
             Log.info("SN1 Lux data received via BLE: %u", received_lux_value);
 
             BluetoothMessage message;
             message.node_id = Node::SN1;
             message.message_type = BluetoothMessageId::LIGHT;
-            // message.value_data = received_lux_value; // <<<< 값을 직접 복사!
             message.data_payload.byte_data = received_lux_value;
             os_queue_put(control_queue, &message, 0, nullptr);
         }
@@ -414,18 +394,16 @@ namespace Bluetooth
         Log.info("Set Pairing Success");
         security_characteristic.setValue(success);
     }
-
-    // SN1의 PWM 값(g_brightness)을 수신하는 콜백 함수
     void PotentiometerLedControlHandlerSN1(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context)
     {
         if (len > 0 && data != nullptr)
         {
-            uint8_t received_pwm_value = data[0]; // SN1에서 uint8_t로 보냄
+            uint8_t received_pwm_value = data[0];
             Log.info("SN1 PWM (g_brightness) data received via BLE: %u", received_pwm_value);
 
             BluetoothMessage message;
             message.node_id = Node::SN1;
-            message.message_type = BluetoothMessageId::SN1_PWM_VALUE; // 새로운 메시지 타입 정의 필요
+            message.message_type = BluetoothMessageId::SN1_PWM_VALUE;
             message.data_payload.byte_data = received_pwm_value;
             os_queue_put(control_queue, &message, 0, nullptr);
         }

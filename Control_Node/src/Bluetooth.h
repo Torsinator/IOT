@@ -22,7 +22,7 @@ namespace Bluetooth
     void SoundHandler(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context);
     void TemperatureHandler(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context);
     void LuxHandlerSN1(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context);
-    void PotentiometerLedControlHandlerSN1(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context); // <--- SN1 PWM 값 핸들러 추가
+    void PotentiometerLedControlHandlerSN1(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context);
     void PotHandlerSN2(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context);
     void SecurityHandler(const uint8_t* data, size_t len, const BlePeerDevice& peer, void* context);
     void SetPairingSuccess(bool success);
