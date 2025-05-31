@@ -174,7 +174,7 @@ namespace Bluetooth
                         }
                         if (connection.device.getCharacteristicByUUID(light_on_off_characteristic, BleUuid(CN_LIGHT_INDICATOR_UUID)))
                         {
-                            Serial.println("Found SN2 security characteristic");
+                            Serial.println("Found SN2 light on off characteristic");
                         }
                         if (connection.device.getCharacteristicByUUID(security_characteristic, BleUuid(CN_SECURITY_UUID)))
                         {

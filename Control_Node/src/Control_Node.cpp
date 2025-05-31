@@ -147,8 +147,9 @@ void loop()
                     Log.info("Lights are on");
                     if (temperature > data_manager.GetTemperatureLightsOn() && !data_manager.GetFanControlled())
                     {
-                        Log.info("Overriding fan with 40 duty");
-                        Bluetooth::SetFanDutyCycle(true, 40);
+                        uint8_t duty = min(100, 30 + 10 * abs(temperature - data_manager.GetTemperatureLightsOn()));
+                        Log.info("Overriding fan with duty: %d", duty);
+                        Bluetooth::SetFanDutyCycle(true, duty);
                         data_manager.SetFanControlled(true);
                     }
                     else if (temperature <= data_manager.GetTemperatureLightsOn() && data_manager.GetFanControlled())
@@ -163,7 +164,9 @@ void loop()
                     Log.info("Lights are off");
                     if (temperature > data_manager.GetTemperatureLightsOff())
                     {
-                        Bluetooth::SetFanDutyCycle(true, 100);
+                        uint8_t duty = min(100, 30 + 10 * abs(temperature - data_manager.GetTemperatureLightsOn()));
+                        Log.info("Overriding fan with duty: %d", duty);
+                        Bluetooth::SetFanDutyCycle(true, duty);
                         data_manager.SetFanControlled(true);
                     }
                     else if (data_manager.GetFanControlled())
@@ -184,9 +187,10 @@ void loop()
 
                     if (lux_value_from_sn1 > 50 && !data_manager.GetLightsOn())
                     {
+                        Log.info("Setting lights on");
                         Bluetooth::SetLightOnOff(true);
                     }
-                    else if (data_manager.GetLightsOn())
+                    else if (lux_value_from_sn1 <= 50 && data_manager.GetLightsOn())
                     {
                         Bluetooth::SetLightOnOff(false);
                     }
@@ -299,6 +303,15 @@ void loop()
                         Bluetooth::SetPairingSuccess(true);
                         data_manager.SetConnectedSN2(true);
                         led_2.update_LED(LED_STATE::GREEN_SOLID);
+                        if (data_manager.GetLightsOn())
+                        {
+                            Log.info("Setting lights on");
+                            Bluetooth::SetLightOnOff(true);
+                        }
+                        else
+                        {
+                            Bluetooth::SetLightOnOff(false);
+                        }
                     }
                     else
                     {
@@ -356,7 +369,7 @@ void loop()
                 {
                     led_3.update_LED(LED_STATE::GREEN_SOLID);
                 }
-                data_manager.SetMoveDetectedSN1((bool) message.data_payload.byte_data);
+                data_manager.SetMoveDetectedSN1((bool)message.data_payload.byte_data);
                 // Cloud::publishDetectionData(); // TODO: uncomment for demo
                 break;
             }

@@ -39,7 +39,7 @@ namespace Bluetooth
     );
 
     BleCharacteristic light_on_off_characteristic(
-        "fan_duty_cycle_override",
+        "light_on_off_characteristic",
         BleCharacteristicProperty::WRITE,
         CN_LIGHT_ON_OFF_UUID, // Characteristic UUID as BleUuid
         SN2_SERVICE_UUID      // Service UUID as BleUuid
@@ -200,8 +200,8 @@ namespace Bluetooth
 
     void SendButtonPress(const bool value)
     {
-        Log.info("Button press sent");
-        call_button_characteristic.setValue((uint8_t *)&value, sizeof(uint8_t));
+        Log.info("Button press sent %d", value);
+        call_button_characteristic.setValue(value);
     }
 
     void SendSoundEvent(const bool value)
