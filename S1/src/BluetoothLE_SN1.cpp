@@ -10,7 +10,7 @@ const char SN1_MOV_CHAR_UUID_STR[] = "ea30004-eeb4-43c3-afef-6423cce071ae";     
 
 BleCharacteristic luxCharacteristic(
     "sn1_lux_level",
-    BleCharacteristicProperty::READ | BleCharacteristicProperty::NOTIFY,
+    BleCharacteristicProperty::READ | BleCharacteristicProperty::WRITE | BleCharacteristicProperty::NOTIFY,
     SN1_LUX_CHAR_UUID_STR,
     SN1_SERVICE_UUID_STR);
 
@@ -45,7 +45,14 @@ void bleCommunicationLoop(); // 스레드 함수 프로토타입
 
 namespace BluetoothLE_SN1
 {
+    void LightlvlHandler(const uint8_t *data, size_t len, const BlePeerDevice &peer, void *context)
+    {
+        LightlvlMessage message = *(LightlvlMessage *)data;
 
+        TargetLightlvl = message.brightness;
+        controlled = message.controlled; // 제어 여부 업데이트
+        Log.info("LightlvlHandler called with data controlled: %d level %d", controlled, TargetLightlvl);
+    }
     void setup()
     {
         os_queue_create(&ble_sn1_data_queue, sizeof(BleSn1DataPacket), BLE_SN1_QUEUE_LENGTH, nullptr); // 네임스페이스 내부에서 BleSn1DataPacket 사용 가능
@@ -56,6 +63,7 @@ namespace BluetoothLE_SN1
         BLE.addCharacteristic(callButtonCharacteristic); // <<< [추가]
         BLE.addCharacteristic(potentiometerLedControlCharacteristic);
         BLE.addCharacteristic(MovementDetection);
+        luxCharacteristic.onDataReceived(LightlvlHandler);
 
         BleAdvertisingData advData;
         advData.appendServiceUUID(BleUuid(SN1_SERVICE_UUID_STR));
@@ -68,18 +76,17 @@ namespace BluetoothLE_SN1
                                                 {
             if (len == 1)
             {
-                uint8_t buttonState = data[0];
+                uint8_t buttonState = *(bool*) data;
                 Log.info("Received BUTTON_STATE: %d", buttonState);
                 // 버튼 상태에 따라 LED 제어
-                if (buttonState == 1)
+                if (buttonState == false)
                 {
-                    digitalWrite(D5, HIGH); //g
-                    digitalWrite(D6, LOW); //r
+                    buttonToggleState = false; // 버튼이 눌리지 않은 상태로 설정
                 }
                 else
                 {
-                    digitalWrite(D5, LOW);
-                    digitalWrite(D6, HIGH);
+                    digitalWrite(D5, HIGH);
+                    digitalWrite(D6, LOW);
                 }
             } });
 

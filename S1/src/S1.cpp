@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <math.h>
 #include "BluetoothLE_SN1.h" // 새로운 BLE 모듈 헤더 추가
+#include "Constants.h"
 
 SYSTEM_MODE(MANUAL);
 
@@ -38,7 +39,7 @@ int currentLED = -1;
 int lastRawButtonState = LOW;
 unsigned long lastButtonDebounceTime = 0;
 const unsigned long BUTTON_DEBOUNCE_DELAY = 50;
-bool buttonToggleState = false;
+volatile bool buttonToggleState = false;
 int lastDebouncedButtonState = LOW;
 
 // Global variables to store current values
@@ -77,16 +78,10 @@ const unsigned long G_BRIGHTNESS_SAMPLE_INTERVAL_MS = 100;
 
 unsigned long last_avg_g_brightness_queue_time = 0;             // queue_time으로 변경
 const unsigned long AVG_G_BRIGHTNESS_QUEUE_INTERVAL_MS = 10000; // 10초마다 평균을 큐에 넣음
+volatile uint8_t TargetLightlvl;
+volatile bool controlled = false;
 
 // --- [추가 시작] SN1 LED1 (D5, D6) Control ---
-enum class Sn1Led1State
-{
-  OFF,
-  GREEN_FLASHING,
-  GREEN_SOLID,
-  RED_FLASHING
-  // RED_SOLID (향후 CN 피드백 시 추가 가능)
-};
 
 Sn1Led1State currentSn1Led1State = Sn1Led1State::OFF;
 bool sn1Led1FlashState = false;
@@ -239,27 +234,30 @@ void loop()
   // }
   //===============================================================
   // POTENTIOMETER AND LIGHT INTENSITY CONTROL
-  potTotal = potTotal - potReadings[potReadIndex];
-  potReadings[potReadIndex] = analogRead(potenPin);
-  potTotal = potTotal + potReadings[potReadIndex];
-  potReadIndex = (potReadIndex + 1) % NUM_POT_READINGS;
-  potAverage = potTotal / NUM_POT_READINGS;
-  g_potenValue = potAverage;
-  int new_brightness = map(g_potenValue, 0, 4095, 0, 255);
-  if (new_brightness < LED_CUTOFF_BRIGHTNESS)
+  if (!(controlled&& g_motionValue == HIGH))
   {
-    new_brightness = 0;
-  }
+    potTotal = potTotal - potReadings[potReadIndex];
+    potReadings[potReadIndex] = analogRead(potenPin);
+    potTotal = potTotal + potReadings[potReadIndex];
+    potReadIndex = (potReadIndex + 1) % NUM_POT_READINGS;
+    potAverage = potTotal / NUM_POT_READINGS;
+    g_potenValue = potAverage;
+    int new_brightness = map(g_potenValue, 0, 4095, 0, 255);
+    if (new_brightness < LED_CUTOFF_BRIGHTNESS)
+    {
+      new_brightness = 0;
+    }
 
-  // LED 밝기 즉시 적용
-  analogWrite(LEDPin, new_brightness);
+    // LED 밝기 즉시 적용
+    analogWrite(LEDPin, new_brightness);
 
-  // g_brightness 값 업데이트 및 변경 시 BLE 큐에 추가
-  if (new_brightness != g_brightness)
-  {
-    g_brightness = new_brightness; // 전역 g_brightness 업데이트
-    // BluetoothLE_SN1::queueDataForSend(BluetoothLE_SN1::Sn1DataType::CURRENT_BRIGHTNESS, (uint8_t)g_brightness);
-    // Serial.print("Queued CURRENT_BRIGHTNESS: "); Serial.println(g_brightness); // 디버깅용
+    // g_brightness 값 업데이트 및 변경 시 BLE 큐에 추가
+    if (new_brightness != g_brightness)
+    {
+      g_brightness = new_brightness; // 전역 g_brightness 업데이트
+      // BluetoothLE_SN1::queueDataForSend(BluetoothLE_SN1::Sn1DataType::CURRENT_BRIGHTNESS, (uint8_t)g_brightness);
+      // Serial.print("Queued CURRENT_BRIGHTNESS: "); Serial.println(g_brightness); // 디버깅용
+    }
   }
 
   if (currentTime - lastPotPrintTime >= POT_PRINT_INTERVAL)
@@ -270,6 +268,7 @@ void loop()
     Serial.print("Brightness(DutyCycle): ");
     Serial.println(g_brightness);
   }
+
   //===============================================================
 
   // --- 10초 평균 g_brightness 계산 및 BLE 큐에 추가 ---
@@ -297,21 +296,26 @@ void loop()
   // ----------------------------------------------------
 
   //===============================================================
-   // BUTTON STATE (수정: BLE 전송 추가, 로컬 LED 직접 제어 제거)
+  // BUTTON STATE (수정: BLE 전송 추가, 로컬 LED 직접 제어 제거)
   int rawButtonValue = digitalRead(pushbutton);
-  if (rawButtonValue != lastRawButtonState) {
+  if (rawButtonValue != lastRawButtonState)
+  {
     lastButtonDebounceTime = currentTime;
   }
 
-  if ((currentTime - lastButtonDebounceTime) >= BUTTON_DEBOUNCE_DELAY) {
-    if (rawButtonValue == HIGH && lastDebouncedButtonState == LOW) { // 버튼이 눌렸다가 떼어졌을 때 (Rising edge)
+  if ((currentTime - lastButtonDebounceTime) >= BUTTON_DEBOUNCE_DELAY)
+  {
+    if (rawButtonValue == HIGH && lastDebouncedButtonState == LOW)
+    {                                         // 버튼이 눌렸다가 떼어졌을 때 (Rising edge)
       buttonToggleState = !buttonToggleState; // 상태 토글
 
       // [수정] BLE로 버튼 상태 전송
       uint8_t ble_button_state = buttonToggleState ? 1 : 0; // true는 1, false는 0
       BluetoothLE_SN1::queueDataForSend(BluetoothLE_SN1::Sn1DataType::BUTTON_STATE, ble_button_state);
-      Serial.print("Button Toggled! Internal State: "); Serial.print(buttonToggleState ? "ACTIVATED" : "DEACTIVATED");
-      Serial.print(", Queued for BLE: "); Serial.println(ble_button_state);
+      Serial.print("Button Toggled! Internal State: ");
+      Serial.print(buttonToggleState ? "ACTIVATED" : "DEACTIVATED");
+      Serial.print(", Queued for BLE: ");
+      Serial.println(ble_button_state);
 
       // [제거] 로컬 LED 직접 제어 (D5, D6). 이 로직은 loop 상단의 SN1 LED1 상태 결정 로직으로 통합됨.
       // if (buttonToggleState) {
@@ -331,6 +335,7 @@ void loop()
   //===============================================================
   // LIGHT SENSOR
   int lightValue = analogRead(lightSensor);
+
   float vout = (lightValue * 3.3) / 4096.0;
   if (vout == 0)
     vout = 0.001;
@@ -346,6 +351,11 @@ void loop()
     Serial.println(g_lux);
   }
 
+  if (controlled && g_lux < TargetLightlvl && g_motionValue == HIGH)
+  {
+    Log.info("controlled is true increasing brightness");
+    analogWrite(LEDPin, g_brightness++);
+  }
   // --- 주기적으로 Lux 값을 BLE 큐에 추가 ---
   if (currentTime - lastLuxQueueTime >= LUX_QUEUE_INTERVAL)
   {
@@ -377,7 +387,7 @@ void loop()
       {
         currentLED = 0; // Green
         Serial.println("Motion Detected! Flashing GREEN LED.");
-        BluetoothLE_SN1::queueDataForSend(BluetoothLE_SN1::Sn1DataType::MOTION_DETECTED, 1); // 
+        BluetoothLE_SN1::queueDataForSend(BluetoothLE_SN1::Sn1DataType::MOTION_DETECTED, 1); //
       }
       else
       {
@@ -421,6 +431,7 @@ void loop()
       digitalWrite(redLED, HIGH);
       currentLED = -1;
       ledState = LOW;
+      BluetoothLE_SN1::queueDataForSend(BluetoothLE_SN1::Sn1DataType::MOTION_DETECTED, 0); //
       Serial.println("Motion Timeout. Flashing stopped.");
     }
   }

@@ -80,6 +80,7 @@ namespace Cloud
                 Log.error("Failed to publish power data.");
                 success = false;
             }
+            Log.info("Publishig time: %ld", Time.now());
             data = String::format("%.2f %d", temperature, lux_level);
             if (!Particle.publish("Environment", data, PRIVATE))
             {                                                     // 온도는 소수점 2자리까지
