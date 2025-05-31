@@ -104,7 +104,7 @@ namespace PowerEstimator
             }
 
             // 2. MCU 및 통신 평균 전력 (연결되었을 때)
-            const float TX_DURATION_S = 0.1f;
+            const float TX_DURATION_S = 0.22f;
             const int TX_COUNT_IN_INTERVAL = static_cast<int>(INTERVAL_S / 10.0);
             float total_current_for_tx_mA = ARGON_CURRENT_IDLE_MA + ARGON_CURRENT_BLE_TX_ADDITIONAL_MA;
             float idle_current_mA = ARGON_CURRENT_IDLE_MA; // 연결 중 IDLE 상태
@@ -146,7 +146,7 @@ namespace PowerEstimator
                 sn2_actuator_avg_power_mW = sn2_accumulated_actuator_power_mW_for_30s / sn2_actuator_power_sample_count_in_30s;
             }
 
-            const float TX_DURATION_S = 0.1f;
+            const float TX_DURATION_S = 0.22f;
             const int TX_COUNT_IN_INTERVAL = static_cast<int>(INTERVAL_S / 10.0);
             float total_current_for_tx_mA = ARGON_CURRENT_IDLE_MA + ARGON_CURRENT_BLE_TX_ADDITIONAL_MA;
             float idle_current_mA = ARGON_CURRENT_IDLE_MA;
@@ -179,8 +179,8 @@ namespace PowerEstimator
         // - BLE RX는 10초에 한 번, 각 SN당 BLE_RX_DURATION_PER_SN_S 동안 지속.
         // - 나머지는 IDLE 상태.
 
-        const float CLOUD_TX_DURATION_S = 1.0f;      // 클라우드 전송 1회당 지속 시간 (가정)
-        const float BLE_RX_DURATION_PER_SN_S = 0.5f; // SN 1개로부터 BLE 수신 1회당 지속 시간 (가정)
+        const float CLOUD_TX_DURATION_S = 1.946f;      // 클라우드 전송 1회당 지속 시간 (가정)
+        const float BLE_RX_DURATION_PER_SN_S = 0.22f; // SN 1개로부터 BLE 수신 1회당 지속 시간 (가정)
         const int BLE_EVENTS_PER_30S = static_cast<int>(INTERVAL_S / 10.0); // 10초마다 BLE 이벤트 발생 가정
 
         float actual_time_spent_cloud_tx_s = 0.0f;
