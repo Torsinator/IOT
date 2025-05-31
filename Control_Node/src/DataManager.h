@@ -59,5 +59,5 @@ private:
     os_mutex_t data_mutex;
     SensorNode1Data sn1_data{false, false, 0, 0};
     SensorNode2Data sn2_data{false, false, false, 0, 0, 0};
-    double cn_accumulated_power_mWh = 0.0; // <--- CN 누적 전력량 변수 추가
+    double cn_accumulated_power_mWh = 0.0; // <--- CN accumulated power in mWh
 };

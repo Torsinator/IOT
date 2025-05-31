@@ -68,10 +68,9 @@ namespace Cloud
             double p_sn2_mWh = data_manager.GetPowerSN2();
             double p_cn_mWh = data_manager.GetPowerCN();
 
-            // 추가: 조도 및 온도 데이터 가져오기
-            uint8_t lux_level = data_manager.GetLightLevel();                                           // SN1에서 오는 조도 값
-            double temperature = data_manager.GetTemperatureLevel();                                    // SN2에서 오는 온도 값
-            Log.info("Cloud.cpp: Value of 'temperature' variable BEFORE publish: %.2f C", temperature); // <--- 이 로그 추가!
+            uint8_t lux_level = data_manager.GetLightLevel();                                           
+            double temperature = data_manager.GetTemperatureLevel();                                    
+            Log.info("Cloud.cpp: Value of 'temperature' variable BEFORE publish: %.2f C", temperature); 
 
             bool success = true;
             String data = String::format("%.2f %.2f %.2f", p_sn1_mWh, p_sn2_mWh, p_cn_mWh);
@@ -83,8 +82,8 @@ namespace Cloud
             Log.info("Publishig time: %ld", Time.now());
             data = String::format("%.2f %d", temperature, lux_level);
             if (!Particle.publish("Environment", data, PRIVATE))
-            {                                                     // 온도는 소수점 2자리까지
-                Log.error("Failed to publish Environment data."); // 실패 시 값도 로그
+            {                                                    
+                Log.error("Failed to publish Environment data."); 
                 success = false;
             }
 
